@@ -1,0 +1,18 @@
+# Device-spezifische Einstellungen (beim Bootloader-Update erhalten)
+# Wird von config.txt per "include usercfg.txt" geladen
+
+boot_delay=0
+arm_control=0x200
+kernel=vmlinuz-rpi
+initramfs initramfs
+gpu_mem=256
+dtparam=sd_overclock=100
+dtoverlay=vc4-kms-v3d
+disable_overscan=1
+hdmi_drive=2
+dtparam=audio=on
+dtparam=krnbt=on
+
+# === PocketTerm35 Zusätze ===
+# dtoverlay=waveshare-35dpi-5b   # aktiviert in config.txt
+# dtparam=i2c_arm=on              # aktiviert in config.txt

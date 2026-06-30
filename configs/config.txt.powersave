@@ -1,0 +1,31 @@
+# PocketTerm35 on RPi5 – postmarketOS mit Phosh
+# Profil: powersave (1500 MHz, fuer Batteriebetrieb/Undervoltage)
+
+kernel=vmlinuz-rpi
+initramfs initramfs
+arm_64bit=1
+
+# PocketTerm35 Hardware
+dtoverlay=vc4-kms-v3d
+dtoverlay=waveshare-35dpi-5b
+dtparam=i2c_arm=on
+dtoverlay=dwc2,dr_mode=host
+gpu_mem=128
+
+# Display 640x480
+hdmi_force_hotplug=1
+hdmi_group=2
+hdmi_mode=87
+hdmi_cvt=640 480 60 6 0 0 0
+
+# Undervoltage: powersave
+arm_freq=1500
+core_freq=500
+gpu_freq=300
+v3d_freq=300
+sdram_freq=3000
+over_voltage=0
+temp_limit=70
+avoid_warnings=2
+
+include usercfg.txt
