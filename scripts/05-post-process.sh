@@ -1,13 +1,13 @@
 #!/bin/sh
 # 05-post-process.sh
-# Passt das gebaute Image fuer PocketTerm35 an:
+# Adapts the built image for PocketTerm35:
 #   - config.txt (kernel, initramfs, arm_64bit, include usercfg.txt)
-#   - usercfg.txt (vc4-kms-v3d, gpu_mem, plus PocketTerm35 Zusätze)
+#   - usercfg.txt (vc4-kms-v3d, gpu_mem, plus PocketTerm35 additions)
 #   - DTBOs (waveshare-35dpi-5b) in /boot/overlays/
-#   - User pmos mit Passwort/PIN 5115
-#   - Phosh Autologin + Systemd powersave Service
-#   - I2C/RP2040 Tastatur
-#   - 3 config-Profile auf boot-Partition
+#   - User pmos with password/PIN 5115
+#   - Phosh autologin + systemd powersave service
+#   - I2C/RP2040 keyboard
+#   - 3 config profiles on boot partition
 
 set -e
 
@@ -17,7 +17,7 @@ IMAGE_DIR="$PROJECT_DIR/images"
 CONFIG_DIR="$PROJECT_DIR/configs"
 DTBO_DIR="$PROJECT_DIR/dtbos"
 
-echo "==> 05: Post-Processing – Image fuer PocketTerm35 anpassen"
+echo "==> 05: Post-processing – adapting image for PocketTerm35"
 echo ""
 
 IMAGE="$1"
@@ -25,8 +25,8 @@ if [ -z "$IMAGE" ]; then
     IMAGE="$(ls -t "$IMAGE_DIR"/*.img 2>/dev/null | head -1)"
 fi
 if [ -z "$IMAGE" ] || [ ! -f "$IMAGE" ]; then
-    echo "Fehler: Kein Image gefunden in $IMAGE_DIR/"
-    echo "  Usage: $0 [pfad/zum/image.img]"
+    echo "Error: No image found in $IMAGE_DIR/"
+    echo "  Usage: $0 [path/to/image.img]"
     exit 1
 fi
 echo "    Image: $IMAGE"
@@ -46,7 +46,7 @@ trap cleanup EXIT INT TERM
 BOOT_PART="${LOOP_DEV}p1"
 ROOT_PART="${LOOP_DEV}p2"
 [ ! -b "$BOOT_PART" ] && BOOT_PART="${LOOP_DEV}p0" && ROOT_PART="${LOOP_DEV}p1"
-[ ! -b "$ROOT_PART" ] && { echo "Keine Root-Partition"; exit 1; }
+[ ! -b "$ROOT_PART" ] && { echo "No root partition found"; exit 1; }
 
 BOOT_MNT="$(mktemp -d /tmp/pmos-boot-XXXXXX)"
 ROOT_MNT="$(mktemp -d /tmp/pmos-root-XXXXXX)"
@@ -57,7 +57,7 @@ echo "    Boot: $BOOT_PART → $BOOT_MNT"
 echo "    Root: $ROOT_PART → $ROOT_MNT"
 
 # ============================================================
-# 1. config.txt (Boilerplate + PocketTerm35 + include usercfg)
+# 1. config.txt (boilerplate + PocketTerm35 + include usercfg)
 # ============================================================
 echo ""
 echo "==> 5.1: config.txt"
@@ -68,19 +68,19 @@ copy_profile() {
         sudo cp "$src" "$dest"
         echo "    → $(basename $dest)"
     else
-        echo "    → FEHLER: $src fehlt"
+        echo "    → ERROR: $src missing"
     fi
 }
 
 copy_profile "$CONFIG_DIR/config.txt" "$BOOT_MNT/config.txt"
 copy_profile "$CONFIG_DIR/config.txt.powersave" "$BOOT_MNT/config.txt.powersave"
 copy_profile "$CONFIG_DIR/config.txt.performance" "$BOOT_MNT/config.txt.performance"
-# Symlink balanced → config.txt (bereits kopiert)
+# Symlink balanced → config.txt (already copied)
 [ -f "$CONFIG_DIR/config.txt.balanced" ] && \
     copy_profile "$CONFIG_DIR/config.txt.balanced" "$BOOT_MNT/config.txt.balanced"
 
 # ============================================================
-# 2. usercfg.txt (original + PocketTerm35 Zusätze)
+# 2. usercfg.txt (original + PocketTerm35 additions)
 # ============================================================
 echo ""
 echo "==> 5.2: usercfg.txt"
@@ -88,14 +88,14 @@ echo "==> 5.2: usercfg.txt"
 if [ -f "$CONFIG_DIR/usercfg.txt" ]; then
     copy_profile "$CONFIG_DIR/usercfg.txt" "$BOOT_MNT/usercfg.txt"
 elif [ -f "$BOOT_MNT/usercfg.txt" ]; then
-    # usercfg.txt existiert bereits (vom Device-Package) – PocketTerm35 Dinge anhängen
-    echo "    → usercfg.txt vorhanden, hänge PocketTerm35 Overlays an"
+    # usercfg.txt already exists (from device package) – append PocketTerm35 entries
+    echo "    → usercfg.txt exists, appending PocketTerm35 overlays"
     echo "" | sudo tee -a "$BOOT_MNT/usercfg.txt" > /dev/null
     echo "# === PocketTerm35 additions ===" | sudo tee -a "$BOOT_MNT/usercfg.txt" > /dev/null
     echo "dtoverlay=waveshare-35dpi-5b" | sudo tee -a "$BOOT_MNT/usercfg.txt" > /dev/null
     echo "dtparam=i2c_arm=on" | sudo tee -a "$BOOT_MNT/usercfg.txt" > /dev/null
 else
-    echo "    → usercfg.txt nicht gefunden, lege an"
+    echo "    → usercfg.txt not found, creating it"
     echo "dtoverlay=waveshare-35dpi-5b" | sudo tee "$BOOT_MNT/usercfg.txt" > /dev/null
     echo "dtparam=i2c_arm=on" | sudo tee -a "$BOOT_MNT/usercfg.txt" > /dev/null
 fi
@@ -142,10 +142,10 @@ sudo chroot "$ROOT_MNT" /bin/sh -c '
 '
 
 # ============================================================
-# 5. Phosh Autologin
+# 5. Phosh autologin
 # ============================================================
 echo ""
-echo "==> 5.5: Phosh Autologin"
+echo "==> 5.5: Phosh autologin"
 
 echo "pmos" | sudo tee "$ROOT_MNT/etc/default-user" > /dev/null
 sudo mkdir -p "$ROOT_MNT/etc/systemd/system/getty@tty1.service.d"
@@ -156,10 +156,10 @@ ExecStart=-/sbin/agetty -o '-p f\\pmos' --autologin pmos --noclear %I 38400 linu
 EOF
 
 # ============================================================
-# 6. Display-Skalierung 640x480
+# 6. Display scaling 640x480
 # ============================================================
 echo ""
-echo "==> 5.6: Phosh 640x480 Skalierung"
+echo "==> 5.6: Phosh 640x480 scaling"
 
 sudo chroot "$ROOT_MNT" /bin/sh -c '
     test -x /usr/bin/gsettings && \
@@ -168,23 +168,23 @@ sudo chroot "$ROOT_MNT" /bin/sh -c '
 ' 2>/dev/null || true
 
 # ============================================================
-# 7. I2C Tastatur
+# 7. I2C keyboard
 # ============================================================
 echo ""
-echo "==> 5.7: I2C/RP2040 Tastatur"
+echo "==> 5.7: I2C/RP2040 keyboard"
 
 echo "i2c-dev" | sudo tee "$ROOT_MNT/etc/modules-load.d/i2c-dev.conf" > /dev/null
 sudo chroot "$ROOT_MNT" /bin/sh -c 'apk add --quiet i2c-tools 2>/dev/null || true' 2>/dev/null || true
 
 # ============================================================
-# 8. Systemd powersave Service
+# 8. Systemd powersave service
 # ============================================================
 echo ""
 echo "==> 5.8: Systemd powersave.service"
 
 sudo tee "$ROOT_MNT/etc/systemd/system/powersave.service" > /dev/null << 'EOF'
 [Unit]
-Description=PocketTerm35 CPU Powersave (gegen Undervoltage)
+Description=PocketTerm35 CPU Powersave (against undervoltage)
 After=local-fs.target
 
 [Service]
@@ -211,10 +211,10 @@ sudo losetup -d "$LOOP_DEV"
 trap '' EXIT INT TERM
 
 echo ""
-echo "=== 05: Fertig ==="
+echo "=== 05: Done ==="
 echo "    Image: $IMAGE"
-echo "    Boot:  config.txt + usercfg.txt + Profile"
+echo "    Boot:  config.txt + usercfg.txt + profiles"
 echo "    User:  pmos / PIN 5115"
-echo "    UI:    Phosh (Autologin)"
+echo "    UI:    Phosh (autologin)"
 echo ""
 echo "    dd if=$IMAGE of=/dev/sdX bs=4M status=progress"

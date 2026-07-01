@@ -1,5 +1,5 @@
-# Device-spezifische Einstellungen (beim Bootloader-Update erhalten)
-# Wird von config.txt per "include usercfg.txt" geladen
+# Device-specific settings (preserved across bootloader updates)
+# Loaded by config.txt via "include usercfg.txt"
 
 boot_delay=0
 arm_control=0x200
@@ -13,6 +13,6 @@ hdmi_drive=2
 dtparam=audio=on
 dtparam=krnbt=on
 
-# === PocketTerm35 Zusätze ===
-# dtoverlay=waveshare-35dpi-5b   # aktiviert in config.txt
-# dtparam=i2c_arm=on              # aktiviert in config.txt
+# === PocketTerm35 additions ===
+# dtoverlay=waveshare-35dpi-5b   # enabled in config.txt
+# dtparam=i2c_arm=on              # enabled in config.txt

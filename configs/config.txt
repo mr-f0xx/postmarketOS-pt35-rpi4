@@ -1,12 +1,12 @@
-# PocketTerm35 on RPi5 – postmarketOS mit Phosh
-# Profil: balanced (Standard)
-# Device-spezifische Einstellungen in usercfg.txt
+# PocketTerm35 on RPi5 – postmarketOS with Phosh
+# Profile: balanced (default)
+# Device-specific settings in usercfg.txt
 
 kernel=vmlinuz-rpi
 initramfs initramfs
 arm_64bit=1
 
-# PocketTerm35 Hardware (DPI 640x480, I2C Tastatur, USB Host)
+# PocketTerm35 hardware (DPI 640x480, I2C keyboard, USB host)
 dtoverlay=vc4-kms-v3d
 dtoverlay=waveshare-35dpi-5b
 dtparam=i2c_arm=on

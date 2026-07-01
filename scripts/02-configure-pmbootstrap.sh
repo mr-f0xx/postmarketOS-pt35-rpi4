@@ -1,7 +1,7 @@
 #!/bin/sh
 # 02-configure-pmbootstrap.sh
-# Initialisiert pmbootstrap fuer Raspberry Pi 5 + PocketTerm35 + Phosh
-# Schreibt Config direkt (ohne interaktive Fragen)
+# Initializes pmbootstrap for Raspberry Pi 5 + PocketTerm35 + Phosh
+# Writes config directly (without interactive prompts)
 
 set -e
 
@@ -12,21 +12,21 @@ echo "==> 02: pmbootstrap init – RPi5, PocketTerm35, Phosh"
 
 PMBOOTSTRAP="$(command -v pmbootstrap || echo "$HOME/pmbootstrap/pmbootstrap.py")"
 if [ ! -x "$PMBOOTSTRAP" ]; then
-    echo "Fehler: pmbootstrap nicht gefunden. Fuehre zuerst 01-install-pmbootstrap.sh aus."
+    echo "Error: pmbootstrap not found. Run 01-install-pmbootstrap.sh first."
     exit 1
 fi
 
-# Pruefe ob pmaports bereits vorhanden
+# Check if pmaports is already present
 PMAPORTS_DIR="$HOME/.local/var/pmbootstrap/cache_git/pmaports"
 if [ ! -d "$PMAPORTS_DIR/.git" ]; then
-    echo "==> pmaports nicht gefunden. Wird geklont (kann dauern)..."
+    echo "==> pmaports not found. Cloning (this may take a while)..."
     mkdir -p "$PMAPORTS_DIR"
     git clone --depth=1 https://gitlab.postmarketos.org/postmarketOS/pmaports.git "$PMAPORTS_DIR"
 else
-    echo "==> pmaports bereits vorhanden"
+    echo "==> pmaports already present"
 fi
 
-echo "==> Schreibe pmbootstrap-Konfiguration..."
+echo "==> Writing pmbootstrap configuration..."
 
 mkdir -p "$HOME/.config"
 cat > "$HOME/.config/pmbootstrap_v3.cfg" << CFGEOF
@@ -37,10 +37,10 @@ ccache_size = 5G
 device = raspberry-pi5
 extra_packages = none
 extra_space = 0
-hostname = 
+hostname =
 jobs = 8
 kernel = rpi
-keymap = 
+keymap =
 locale = en_US.UTF-8
 ssh_key_glob = ~/.ssh/*.pub
 ssh_keys = false
@@ -63,11 +63,11 @@ systemd = http://mirror.postmarketos.org/postmarketos/extra-repos/systemd/
 systemd_custom = none
 CFGEOF
 
-echo "==> Konfiguration geschrieben."
+echo "==> Configuration written."
 "$PMBOOTSTRAP" config device
 "$PMBOOTSTRAP" config ui
 "$PMBOOTSTRAP" config user
 
 echo ""
-echo "==> 02: Fertig"
-echo "    Weiter mit: ./03-prepare-dtbos.sh"
+echo "==> 02: Done"
+echo "    Next: ./03-prepare-dtbos.sh"

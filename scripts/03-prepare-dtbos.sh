@@ -1,6 +1,6 @@
 #!/bin/sh
 # 03-prepare-dtbos.sh
-# Laedt die Waveshare PocketTerm35 DTBOs herunter und entpackt sie
+# Downloads and extracts the Waveshare PocketTerm35 DTBOs
 
 set -e
 
@@ -9,44 +9,44 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 DTBO_DIR="$PROJECT_DIR/dtbos"
 CONFIG_DIR="$PROJECT_DIR/configs"
 
-echo "==> 03: Lade Waveshare PocketTerm35 DTBOs herunter"
+echo "==> 03: Downloading Waveshare PocketTerm35 DTBOs"
 
 mkdir -p "$DTBO_DIR" "$CONFIG_DIR"
 
-# ---- 1. DTBO ZIP von Waveshare ----
+# ---- 1. DTBO ZIP from Waveshare ----
 DTBO_URL="https://files.waveshare.com/wiki/common/3.5HDMI_E_DTBO.zip"
 DTBO_ZIP="$DTBO_DIR/3.5HDMI_E_DTBO.zip"
 
-echo "==> Downloade DTBO-Paket von Waveshare..."
+echo "==> Downloading DTBO package from Waveshare..."
 if [ ! -f "$DTBO_ZIP" ]; then
     wget -q "$DTBO_URL" -O "$DTBO_ZIP" || curl -sL "$DTBO_URL" -o "$DTBO_ZIP"
     echo "    -> $DTBO_ZIP"
 else
-    echo "    -> bereits vorhanden: $DTBO_ZIP"
+    echo "    -> already exists: $DTBO_ZIP"
 fi
 
-echo "==> Entpacke DTBOs..."
+echo "==> Extracting DTBOs..."
 unzip -o "$DTBO_ZIP" -d "$DTBO_DIR" 2>/dev/null || true
 
-# Kopiere .dtbo Dateien aus Unterverzeichnissen direkt nach dtbos/
+# Copy .dtbo files from subdirectories directly into dtbos/
 find "$DTBO_DIR" -name '*.dtbo' -exec cp {} "$DTBO_DIR" \; 2>/dev/null || true
 
-echo "==> Enthaltene .dtbo Dateien:"
+echo "==> Found .dtbo files:"
 find "$DTBO_DIR" -maxdepth 1 -name '*.dtbo' -exec ls -lh {} \;
 
-# ---- 2. Platzhalter falls keine DTBOs gefunden ----
+# ---- 2. Placeholder if no DTBOs found ----
 if ! find "$DTBO_DIR" -maxdepth 1 -name '*.dtbo' 2>/dev/null | grep -q .; then
-    echo "Warnung: Keine .dtbo Dateien in der ZIP gefunden."
-    echo "Erstelle Platzhalter-Dateien – bitte manuell ersetzen."
+    echo "Warning: No .dtbo files found in the ZIP."
+    echo "Creating placeholder files – please replace manually."
     for overlay in waveshare-35dpi-4b waveshare-35dpi-5b; do
-        echo "Platzhalter: $overlay.dtbo" > "$DTBO_DIR/$overlay.dtbo"
+        echo "Placeholder: $overlay.dtbo" > "$DTBO_DIR/$overlay.dtbo"
     done
 fi
 
 echo ""
-echo "==> DTBOs sind bereit in: $DTBO_DIR"
-echo "    Alle .dtbo (flach):"
+echo "==> DTBOs are ready in: $DTBO_DIR"
+echo "    All .dtbo files (flat):"
 find "$DTBO_DIR" -maxdepth 1 -name '*.dtbo' -exec echo "      - {}" \;
 
 echo ""
-echo "==> 03: Fertig. Weiter mit: ./04-build-image.sh"
+echo "==> 03: Done. Next: ./04-build-image.sh"
