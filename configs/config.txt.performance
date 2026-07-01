@@ -1,11 +1,11 @@
-# PocketTerm35 on RPi5 – postmarketOS mit Phosh
-# Profil: performance (2400 MHz, nur mit stablem PD-Netzteil)
+# PocketTerm35 on RPi5 – postmarketOS with Phosh
+# Profile: performance (2400 MHz, stable PD power supply required)
 
 kernel=vmlinuz-rpi
 initramfs initramfs
 arm_64bit=1
 
-# PocketTerm35 Hardware
+# PocketTerm35 hardware
 dtoverlay=vc4-kms-v3d
 dtoverlay=waveshare-35dpi-5b
 dtparam=i2c_arm=on

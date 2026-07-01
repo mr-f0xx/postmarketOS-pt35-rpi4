@@ -1,59 +1,59 @@
-# postmarketOS fuer Waveshare PocketTerm35 + Raspberry Pi 5
+# postmarketOS for Waveshare PocketTerm35 + Raspberry Pi 5
 
 > **User:** pmos | **PIN:** 5115 | **UI:** Phosh | **Display:** 640x480
 
-Dieses Repository enthaelt eine automatisierte Build-Pipeline, um ein
-postmarketOS-Image fuer das **Waveshare PocketTerm35** mit **Raspberry Pi 5**
-zu bauen. Das Image beinhaltet alle notwendigen Device-Tree-Overlays,
-Display-Konfigurationen und Undervoltage-Schutzmassnahmen.
+This repository contains an automated build pipeline to create a
+postmarketOS image for the **Waveshare PocketTerm35** with **Raspberry Pi 5**.
+The image includes all required Device Tree Overlays,
+display configurations, and undervoltage protection measures.
 
 ---
 
-## Projektstruktur
+## Project Structure
 
 ```
 rpmos/
-├── README.md                       # Diese Dokumentation
+├── README.md                       # This documentation
 ├── scripts/
-│   ├── 00-run-all.sh               # Alle Schritte automatisch (01-05)
-│   ├── 01-install-pmbootstrap.sh   # Dependencies + pmbootstrap installieren
+│   ├── 00-run-all.sh               # Run all steps automatically (01-05)
+│   ├── 01-install-pmbootstrap.sh   # Install dependencies + pmbootstrap
 │   ├── 02-configure-pmbootstrap.sh # pmbootstrap init (RPi5, Phosh, pmos)
-│   ├── 03-prepare-dtbos.sh         # Waveshare DTBOs downloaden/entpacken
-│   ├── 04-build-image.sh           # postmarketOS Image bauen
-│   └── 05-post-process.sh          # Image konfigurieren (User, configs, etc.)
+│   ├── 03-prepare-dtbos.sh         # Download/extract Waveshare DTBOs
+│   ├── 04-build-image.sh           # Build postmarketOS image
+│   └── 05-post-process.sh          # Configure image (user, configs, etc.)
 ├── configs/
-│   ├── config.txt                  # Standard-Konfiguration (balanced)
-│   ├── config.txt.powersave        # Untertaktet – kein Undervoltage
-│   ├── config.txt.balanced         # Ausgewogen – Standard
-│   └── config.txt.performance      # Volle Leistung – nur am Netzteil
-├── dtbos/                          # Waveshare .dtbo Dateien (automatisch)
-└── images/                         # Output: postmarketOS Images
-    └── postmarketOS-latest.img     # Symlink auf letztes Build
+│   ├── config.txt                  # Default configuration (balanced)
+│   ├── config.txt.powersave        # Underclocked – no undervoltage
+│   ├── config.txt.balanced         # Balanced – default
+│   └── config.txt.performance      # Full performance – power supply only
+├── dtbos/                          # Waveshare .dtbo files (auto-downloaded)
+└── images/                         # Output: postmarketOS images
+    └── postmarketOS-latest.img     # Symlink to latest build
 ```
 
 ---
 
-## Schnellstart
+## Quick Start
 
-### Voraussetzungen
+### Prerequisites
 
-- **Linux** x86_64 (pmbootstrap unterstuetzt nur Linux)
-- **~10 GB** freier Speicher (fuer Build-Chroots)
-- **2+ GB RAM** empfohlen
-- **Schnelle Internetverbindung** (Erst-Build laedt ~1-2 GB)
+- **Linux** x86_64 (pmbootstrap supports Linux only)
+- **~10 GB** free disk space (for build chroots)
+- **2+ GB RAM** recommended
+- **Fast internet connection** (first build downloads ~1-2 GB)
 
-### Build ausfuehren
+### Running the Build
 
 ```bash
-# 1. Alle Skripte ausfuehren
+# 1. Run all scripts
 cd rpmos
 sudo ./scripts/00-run-all.sh
 ```
 
-Oder Schritt fuer Schritt:
+Or step by step:
 
 ```bash
-# 2. Oder manuell
+# 2. Or manually
 cd rpmos
 ./scripts/01-install-pmbootstrap.sh
 source ~/.profile
@@ -63,100 +63,99 @@ source ~/.profile
 sudo ./scripts/05-post-process.sh
 ```
 
-### Image flashen (SD-Karte oder USB)
+### Flashing the Image (SD card or USB)
 
 ```bash
-# Geraet ermitteln (VORSICHT!)
+# Identify device (CAUTION!)
 lsblk
 
-# Image flashen
+# Flash image
 sudo dd if=images/postmarketOS-latest.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
-### Image auf NVMe flashen (PocketTerm35)
+### Flashing the Image to NVMe (PocketTerm35)
 
 ```bash
-# Automatisch (erkennt angeschlossene NVMe)
+# Automatic (detects connected NVMe)
 sudo ./scripts/06-flash-nvme.sh
 
-# Oder manuell
+# Or manually
 sudo ./scripts/06-flash-nvme.sh /dev/nvme0n1
 ```
 
-Das Script zeigt eine Sicherheitsabfrage bevor es schreibt und
-prueft ob das Image auf den NVMe passt.
+The script shows a confirmation prompt before writing and
+checks whether the image fits on the NVMe drive.
 
 ---
 
-## Display-Konfiguration (640x480)
+## Display Configuration (640x480)
 
-Das PocketTerm35 hat ein **3.5" IPS-Display mit 640x480 Pixeln**,
-angeschlossen ueber den **DPI (Display Parallel Interface)** GPIO-Pinhead.
+The PocketTerm35 has a **3.5" IPS display with 640x480 pixels**,
+connected via the **DPI (Display Parallel Interface)** GPIO pinheader.
 
-Die config.txt verwendet:
-- `waveshare-35dpi-4b` / `waveshare-35dpi-5b` – DPI-Timings
-- `hdmi_cvt=640 480 60 6 0 0 0` – Custom Mode
+The config.txt uses:
+- `waveshare-35dpi-4b` / `waveshare-35dpi-5b` – DPI timings
+- `hdmi_cvt=640 480 60 6 0 0 0` – Custom mode
 - `framebuffer_width=640` / `framebuffer_height=480` – Framebuffer
 
-**DTBO-Herkunft:** Die Overlays werden von Waveshare bereitgestellt
-(https://files.waveshare.com/wiki/common/3.5HDMI_E_DTBO.zip) und
-automatisch von Script 03 heruntergeladen.
+**DTBO source:** The overlays are provided by Waveshare
+(https://files.waveshare.com/wiki/common/3.5HDMI_E_DTBO.zip) and
+are downloaded automatically by script 03.
 
 ---
 
-## Undervoltage-Warnungen
+## Undervoltage Warnings
 
-Der RPi5 ist bekannt fuer **Undervoltage-Warnungen** (Blitz-Symbol),
-wenn die Spannung unter 4.65V faellt. Das PocketTerm35 wird ueber eine
-integrierte Batterie versorgt, die bei Last nicht immer ausreichend
-stabil ist.
+The RPi5 is known for **undervoltage warnings** (lightning bolt symbol)
+when voltage drops below 4.65V. The PocketTerm35 is powered by an
+integrated battery, which is not always sufficiently stable under load.
 
-### Loesungen im Image
+### Solutions in the Image
 
-**1. CPU-Takt reduzieren (in config.txt)**
+**1. Reduce CPU clock (in config.txt)**
 
-| Profil | arm_freq | core_freq | sdram_freq | Wann? |
-|--------|----------|-----------|------------|-------|
-| `powersave` | 1500 MHz | 400 MHz | 3000 MHz | Batteriebetrieb |
-| `balanced` | 1800 MHz | 600 MHz | 3500 MHz | Standard |
-| `performance` | 2400 MHz | 700 MHz | 4267 MHz | Nur mit 27W PD-Netzteil |
+| Profile | arm_freq | core_freq | sdram_freq | When? |
+|---------|----------|-----------|------------|-------|
+| `powersave` | 1500 MHz | 400 MHz | 3000 MHz | Battery operation |
+| `balanced` | 1800 MHz | 600 MHz | 3500 MHz | Default |
+| `performance` | 2400 MHz | 700 MHz | 4267 MHz | 27W PD power supply only |
 
-**Profil wechseln:** Die config.txt auf der Boot-Partition austauschen:
+**Switching profiles:** Replace config.txt on the boot partition:
 
 ```bash
-# SD-Karte mounten
+# Mount SD card
 sudo mount /dev/sdX1 /mnt/boot
 
-# Profil wechseln
+# Switch profile
 sudo cp /mnt/boot/config.txt.powersave /mnt/boot/config.txt
 
-# Oder von einem anderen Profil
+# Or from another profile
 sudo cp /mnt/boot/config.txt.balanced /mnt/boot/config.txt
 
 sudo umount /mnt/boot
 ```
 
 **2. Avoid Warnings**
-`avoid_warnings=2` unterdrueckt die visuellen Warnungen.
+`avoid_warnings=2` suppresses the visual warnings.
 
-**3. Hardware-Tipps**
-- Hochwertiges USB-C Kabel (5A rated) verwenden
-- 27W+ USB-PD Netzteil (official RPi5 power supply empfohlen)
-- Keine stromhungrigen USB-Geraete am PocketTerm35 im Batteriebetrieb
-- Das offizielle RPi5 Netzteil ist fuer stabilen Betrieb notwendig
+**3. Hardware Tips**
+- Use a high-quality USB-C cable (5A rated)
+- 27W+ USB-PD power supply (official RPi5 power supply recommended)
+- No power-hungry USB devices on the PocketTerm35 during battery operation
+- The official RPi5 power supply is required for stable operation
 
 ---
 
-## Benutzerkonfiguration
+## User Configuration
 
-| Eigenschaft | Wert |
-|-------------|------|
+| Property | Value |
+|----------|-------|
 | Username | `pmos` |
-| Passwort/PIN | `5115` |
+| Password/PIN | `5115` |
 | Shell | `/bin/bash` |
-| Autologin | Phosh startet automatisch |
+| Autologin | Phosh starts automatically |
 
-Nach dem ersten Boot das Passwort aendern:
+Change the password after the first boot:
 ```bash
 passwd
 ```
@@ -165,67 +164,67 @@ passwd
 
 ## Troubleshooting
 
-### Keyboard funktioniert nicht (RP2040 I2C)
+### Keyboard not working (RP2040 I2C)
 
-Der Tastatur-Controller kommuniziert via I2C. Pruefe:
+The keyboard controller communicates via I2C. Check:
 
 ```bash
-# I2C-Bus erkennen
+# Detect I2C bus
 i2cdetect -l
 
-# RP2040 finden (Adresse 0x15 oder 0x17)
+# Find RP2040 (address 0x15 or 0x17)
 i2cdetect -y 1
 ```
 
-### Display bleibt schwarz
+### Display stays black
 
-1. Pruefe ob die DTBOs in `/boot/overlays/` vorhanden sind
-2. HDMI-Kabel abziehen (das Display laeuft ueber GPIO/DPI)
-3. Anderes Profil versuchen (`config.txt.balanced` statt `config.txt`)
+1. Check if DTBOs are present in `/boot/overlays/`
+2. Unplug HDMI cable (the display runs via GPIO/DPI)
+3. Try a different profile (`config.txt.balanced` instead of `config.txt`)
 
-### Phosh ist zu klein / zu gross
+### Phosh is too small / too large
 
 ```bash
-# Zoom anpassen
+# Adjust zoom
 gsettings set org.gnome.desktop.interface text-scaling-factor 1.5
 
-# Oder Monitor-Skalierung
+# Or monitor scaling
 gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
 ```
 
 ---
 
-## Build-Details
+## Build Details
 
-### Verwendete Software
+### Software Used
 
-| Komponente | Version |
-|------------|---------|
+| Component | Version |
+|-----------|---------|
 | postmarketOS | edge / v24.12 |
 | pmbootstrap | latest (git) |
 | UI | phosh (Phosh Shell + phoc) |
 | Kernel | linux-rpi (Alpine/RPi) |
 | Init | OpenRC |
 
-### Benoetigte Pakete auf dem Build-Host
+### Required Packages on the Build Host
 
 - git, python3, openssl
-- xz-utils (fuer Image-Kompression)
-- dosfstools, e2fsprogs (fuer Loop-Mount)
-- curl / wget (fuer DTBO-Download)
+- xz-utils (for image compression)
+- dosfstools, e2fsprogs (for loop mount)
+- curl / wget (for DTBO download)
 
-### Bekannte Einschraenkungen
+### Known Limitations
 
-- `waveshare-35dpi-4b/5b` Overlays sind ggf. nicht im mainline Kernel
-  enthalten – sie werden separat von Waveshare bezogen
-- Phosh ist fuer 640x480 nicht ideal optimiert – Skalierung manuell anpassen
-- Der erste Build kann 30-120 Minuten dauern
+- `waveshare-35dpi-4b/5b` overlays may not be included in the mainline kernel
+  – they are obtained separately from Waveshare
+- Phosh is not ideally optimized for 640x480 – adjust scaling manually
+- The first build can take 30-120 minutes
 
 ---
 
-## Lizenz
+## License
 
-GPL-3.0 (wie postmarketOS)
+GPL-3.0 (like postmarketOS)
 
 ---
 
@@ -234,4 +233,4 @@ GPL-3.0 (wie postmarketOS)
 - [Waveshare PocketTerm35 Wiki](https://docs.waveshare.com/PocketTerm35/)
 - [postmarketOS Wiki](https://wiki.postmarketos.org/)
 - [pmbootstrap Repository](https://gitlab.postmarketos.org/postmarketOS/pmbootstrap)
-- [RPi5 config.txt Dokumentation](https://www.raspberrypi.com/documentation/computers/config_txt.html)
+- [RPi5 config.txt Documentation](https://www.raspberrypi.com/documentation/computers/config_txt.html)

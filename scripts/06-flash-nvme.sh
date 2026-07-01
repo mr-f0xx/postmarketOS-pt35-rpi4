@@ -1,6 +1,6 @@
 #!/bin/sh
 # 06-flash-nvme.sh
-# Flasht das gebaute Image auf einen angeschlossenen NVMe-Drive
+# Flashes the built image to a connected NVMe drive
 
 set -e
 
@@ -9,27 +9,27 @@ PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 IMAGE_DIR="$PROJECT_DIR/images"
 
 echo "==========================================="
-echo "  PocketTerm35 Image auf NVME flashen"
+echo "  Flash PocketTerm35 Image to NVMe"
 echo "==========================================="
 echo ""
 
-# ---- Image auswaehlen ----
+# ---- Select image ----
 IMAGE="$1"
 if [ -z "$IMAGE" ]; then
     IMAGE="$(ls -t "$IMAGE_DIR"/*.img 2>/dev/null | head -1)"
 fi
 if [ -z "$IMAGE" ] || [ ! -f "$IMAGE" ]; then
-    echo "Fehler: Kein Image gefunden."
-    echo "  Usage: $0 [pfad/zum/image.img]"
-    echo "  Oder:  lege ein .img in $IMAGE_DIR/"
+    echo "Error: No image found."
+    echo "  Usage: $0 [path/to/image.img]"
+    echo "  Or:    place a .img file in $IMAGE_DIR/"
     exit 1
 fi
 echo "Image: $IMAGE ($(du -h "$IMAGE" | cut -f1))"
 
-# ---- NVMe-Geraete auflisten ----
+# ---- List NVMe devices ----
 echo ""
-echo "Gefundene NVMe-Geraete:"
-lsblk -d -o NAME,SIZE,MODEL,TRAN -e 2,11 2>/dev/null | grep nvme || echo "  (keine NVMe gefunden)"
+echo "Found NVMe devices:"
+lsblk -d -o NAME,SIZE,MODEL,TRAN -e 2,11 2>/dev/null | grep nvme || echo "  (no NVMe found)"
 echo ""
 
 NVME_DEV=""
@@ -43,70 +43,70 @@ for dev in /dev/nvme0n1 /dev/nvme1n1 /dev/nvme2n1; do
 done
 
 if [ -z "$AVAILABLE_NVME" ]; then
-    echo "FEHLER: Kein NVMe-Geraet gefunden."
+    echo "ERROR: No NVMe device found."
     echo ""
-    echo "Moegliche Gruende:"
-    echo "  - NVMe nicht angeschlossen / nicht erkannt"
-    echo "  - Keine Berechtigung (Script als sudo ausfuehren)"
-    echo "  - PCIe NVMe Adapter nicht korrekt im PocketTerm35"
+    echo "Possible reasons:"
+    echo "  - NVMe not connected / not detected"
+    echo "  - No permission (run script with sudo)"
+    echo "  - PCIe NVMe adapter not properly seated in PocketTerm35"
     exit 1
 fi
 
-echo "Verfuegbare NVMe-Geraete:"
+echo "Available NVMe devices:"
 printf "$AVAILABLE_NVME"
 echo ""
 
-# ---- Ziel auswaehlen ----
+# ---- Select target ----
 if [ $(printf "$AVAILABLE_NVME" | wc -l) -eq 1 ]; then
     NVME_DEV="$(printf "$AVAILABLE_NVME" | grep -o '/dev/nvme[0-9]n[0-9]' | head -1)"
-    echo "-> Einziges NVMe: $NVME_DEV"
+    echo "-> Single NVMe: $NVME_DEV"
 else
-    echo "Bitte Ziel-NVMe eingeben (z.B. /dev/nvme0n1):"
+    echo "Please enter target NVMe (e.g. /dev/nvme0n1):"
     printf "> "
     read NVME_DEV
 fi
 
 if [ ! -b "$NVME_DEV" ]; then
-    echo "FEHLER: $NVME_DEV ist kein Blockdevice."
+    echo "ERROR: $NVME_DEV is not a block device."
     exit 1
 fi
 
-# ---- Sicherheitscheck ----
+# ---- Safety check ----
 echo ""
 echo "==========================================="
-echo "  ACHTUNG! ALLE DATEN AUF $NVME_DEV WERDEN GELOESCHT!"
+echo "  WARNING! ALL DATA ON $NVME_DEV WILL BE ERASED!"
 echo "==========================================="
 echo "  Image:  $IMAGE"
-echo "  Ziel:   $NVME_DEV"
-echo "  Groesse: $(lsblk -dn -o SIZE $NVME_DEV)"
+echo "  Target: $NVME_DEV"
+echo "  Size:   $(lsblk -dn -o SIZE $NVME_DEV)"
 echo ""
-echo "  'yes' eingeben um zu bestaetigen: "
+echo "  Type 'yes' to confirm: "
 printf "> "
 read CONFIRM
 
 if [ "$CONFIRM" != "yes" ]; then
-    echo "Abbruch."
+    echo "Aborted."
     exit 1
 fi
 
-# ---- Pruefen ob Image auf Ziel passt ----
+# ---- Check if image fits on target ----
 IMAGE_SIZE="$(stat -c%s "$IMAGE")"
 NVME_SIZE="$(cat /sys/block/$(basename $NVME_DEV)/size)"
 NVME_SIZE_BYTES="$((NVME_SIZE * 512))"
 
 if [ "$IMAGE_SIZE" -gt "$NVME_SIZE_BYTES" ]; then
-    echo "FEHLER: Image ($IMAGE_SIZE Bytes) ist groesser als NVMe ($NVME_SIZE_BYTES Bytes)"
+    echo "ERROR: Image ($IMAGE_SIZE bytes) is larger than NVMe ($NVME_SIZE_BYTES bytes)"
     exit 1
 fi
 
-# ---- Flashen ----
+# ---- Flash ----
 echo ""
-echo "==> Flashe $IMAGE -> $NVME_DEV ..."
-echo "    Das kann einige Minuten dauern."
+echo "==> Flashing $IMAGE -> $NVME_DEV ..."
+echo "    This may take a few minutes."
 
 START_TIME="$(date +%s)"
 
-# Mit dd flashen
+# Flash with dd
 sudo dd if="$IMAGE" of="$NVME_DEV" bs=4M status=progress conv=fsync
 
 END_TIME="$(date +%s)"
@@ -114,25 +114,25 @@ DURATION="$((END_TIME - START_TIME))"
 
 # sync
 echo ""
-echo "==> Sync..."
+echo "==> Syncing..."
 sync
 
-# ---- Partitions-Tabelle neu einlesen ----
-echo "==> Lese Partitionstabelle neu ein..."
+# ---- Re-read partition table ----
+echo "==> Re-reading partition table..."
 sudo partprobe "$NVME_DEV" 2>/dev/null || sudo blockdev --rereadpt "$NVME_DEV" 2>/dev/null || true
 
 echo ""
 echo "==========================================="
-echo "  Fertig! Image erfolgreich geflasht!"
+echo "  Done! Image flashed successfully!"
 echo "==========================================="
-echo "  Ziel:     $NVME_DEV"
-echo "  Image:    $(basename "$IMAGE")"
-echo "  Dauer:    ${DURATION}s"
-echo "  Geschw:   $(( IMAGE_SIZE / 1048576 / (DURATION + 1) )) MB/s"
+echo "  Target:  $NVME_DEV"
+echo "  Image:   $(basename "$IMAGE")"
+echo "  Time:    ${DURATION}s"
+echo "  Speed:   $(( IMAGE_SIZE / 1048576 / (DURATION + 1) )) MB/s"
 echo ""
-echo "  Jetzt in PocketTerm35 einschalten:"
-echo "  - Nach dem ersten Boot wird die Root-Partition automatisch"
-echo "    auf die volle NVMe-Groesse erweitert"
+echo "  Now insert into PocketTerm35 and power on:"
+echo "  - After the first boot the root partition will be"
+echo "    automatically expanded to the full NVMe size"
 echo "  - User: pmos"
 echo "  - PIN:  5115"
 echo "==========================================="

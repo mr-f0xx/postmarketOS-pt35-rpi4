@@ -1,7 +1,7 @@
-# PocketTerm35 RPi5 – Balanced-Profil (Standard)
-# Gute Balance zwischen Leistung und Stabilität
+# PocketTerm35 RPi5 – Balanced profile (default)
+# Good balance between performance and stability
 
-# === PocketTerm35 Hardware ===
+# === PocketTerm35 hardware ===
 dtparam=i2c_arm=on
 dtoverlay=waveshare-35dpi-4b
 dtoverlay=waveshare-35dpi-5b
@@ -18,8 +18,8 @@ hdmi_group=2
 hdmi_mode=87
 hdmi_cvt=640 480 60 6 0 0 0
 
-# === Undervoltage Praevention ===
-# Moderate Reduzierung – stabil mit 5V/3A+
+# === Undervoltage prevention ===
+# Moderate reduction – stable with 5V/3A+
 arm_freq=1800
 core_freq=600
 gpu_freq=400
@@ -29,6 +29,6 @@ over_voltage=0
 temp_limit=80
 avoid_warnings=1
 
-# === USB Power ===
+# === USB power ===
 max_usb_current=1
 usb_max_current=1
