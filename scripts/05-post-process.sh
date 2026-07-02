@@ -175,6 +175,7 @@ echo "==> 5.7: I2C/RP2040 keyboard"
 
 echo "i2c-dev" | sudo tee "$ROOT_MNT/etc/modules-load.d/i2c-dev.conf" > /dev/null
 sudo chroot "$ROOT_MNT" /bin/sh -c 'apk add --quiet i2c-tools 2>/dev/null || true' 2>/dev/null || true
+sudo chroot "$ROOT_MNT" /bin/sh -c 'apk add --quiet growpart parted e2fsprogs 2>/dev/null || true' 2>/dev/null || true
 
 # ============================================================
 # 8. Systemd powersave service
@@ -199,10 +200,70 @@ EOF
 sudo chroot "$ROOT_MNT" systemctl enable powersave 2>/dev/null || true
 
 # ============================================================
+# 9. First-boot partition resize
+# ============================================================
+echo ""
+echo "==> 5.9: First-boot partition resize service"
+
+sudo tee "$ROOT_MNT/usr/local/sbin/resize-rootfs.sh" > /dev/null << 'SCRIPTEOF'
+#!/bin/sh
+if [ -f /etc/resize-rootfs-done ]; then
+    exit 0
+fi
+
+ROOT_DEV=$(findmnt -n -o SOURCE /)
+case "$ROOT_DEV" in
+    /dev/nvme*)
+        DISK=$(echo "$ROOT_DEV" | sed 's/p[0-9]*$//')
+        PART=$(echo "$ROOT_DEV" | sed 's/.*p//')
+        ;;
+    /dev/mmcblk*|/dev/loop*)
+        DISK=$(echo "$ROOT_DEV" | sed 's/p[0-9]*$//')
+        PART=$(echo "$ROOT_DEV" | sed 's/.*p//')
+        ;;
+    /dev/sd*)
+        DISK=$(echo "$ROOT_DEV" | sed 's/[0-9]*$//')
+        PART=$(echo "$ROOT_DEV" | sed 's/.*[^0-9]//')
+        ;;
+    *)
+        echo "resize-rootfs: unknown root device $ROOT_DEV"
+        exit 1
+        ;;
+esac
+
+echo "resize-rootfs: expanding $ROOT_DEV on $DISK partition $PART"
+growpart "$DISK" "$PART" || echo "resize-rootfs: growpart skipped or failed"
+partprobe "$DISK" 2>/dev/null || blockdev --rereadpt "$DISK" 2>/dev/null || echo "resize-rootfs: rereadpt skipped"
+resize2fs "$ROOT_DEV" || echo "resize-rootfs: resize2fs failed"
+
+touch /etc/resize-rootfs-done
+echo "resize-rootfs: done, rebooting"
+reboot
+SCRIPTEOF
+sudo chmod +x "$ROOT_MNT/usr/local/sbin/resize-rootfs.sh"
+
+sudo tee "$ROOT_MNT/etc/systemd/system/resize-rootfs.service" > /dev/null << 'EOF'
+[Unit]
+Description=Resize root partition on first boot
+After=local-fs.target
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/resize-rootfs.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo chroot "$ROOT_MNT" systemctl enable resize-rootfs 2>/dev/null || true
+
+# ============================================================
 # Cleanup
 # ============================================================
 echo ""
-echo "==> 5.9: Cleanup"
+echo "==> 5.10: Cleanup"
 sync
 sudo umount "$BOOT_MNT"
 sudo umount "$ROOT_MNT"
