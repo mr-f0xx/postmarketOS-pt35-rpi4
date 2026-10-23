@@ -13,3 +13,6 @@ dtoverlay=dwc2,dr_mode=host
 # No RAM/GPU overclock, forced turbo, voltage changes or hidden warnings.
 arm_boost=0
 arm_freq=1200
+
+# Optional CPU boot preset, disabled unless explicitly enabled by the user.
+include pocketterm35-overclock.txt

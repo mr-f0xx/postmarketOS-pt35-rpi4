@@ -13,7 +13,7 @@ keyboard required for unlocking in Sway. This is not a validated release image.
 - Compact **24-pixel Waybar**, fullscreen and bar visibility toggles. Network,
   volume, battery, clock and workspace modules can be removed independently.
 - Foot terminal: 9-point font, 2-pixel padding, bounded scrollback, no blinking cursor.
-- Dynamic CPU governor, optional battery/performance profiles, no overclocking.
+- Dynamic CPU governor, optional battery/performance profiles, no overclocking by default.
 - RAM-aware compressed swap: half of RAM, capped at **1 GiB**, priority 100.
   Leaves pre-existing zram configurations and disk swap alone.
 - On-demand on-screen keyboard, compact notifications, five-minute idle lock/blanking.
@@ -169,3 +169,12 @@ Font packages include JetBrains Mono, Hack, Fira Mono, Source Code Pro,
 Inconsolata, DejaVu, Liberation and Noto. **Neon80 needs a verified licensed source
 before bundling**; a personally installed licensed font becomes selectable.
 See the device guide for testing risks, font installation and app-size limits.
+
+### Optional overclock
+
+Controls → Device now offers **experimental 1.8 GHz / 2.0 GHz CPU boot presets**
+and an option to disable them. Overclocking is off by default, requires sudo and
+an explicit typed risk confirmation, and never reboots automatically. Cooling,
+stable power, backups and a recovery card reader are essential. Settings are
+not hardware-validated and can cause boot failure/data corruption/hardware damage.
+See the device guide for voltage offsets, limitations and SD-card recovery.

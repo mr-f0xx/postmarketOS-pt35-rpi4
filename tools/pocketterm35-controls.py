@@ -596,6 +596,18 @@ def main():
     device.pack_start(text('CPU profiles — opens a sudo prompt in Foot'), False, False, 0)
     for profile in ('balanced', 'battery', 'performance'):
         button(device, profile.title(), lambda _, profile=profile: launch(['foot', '-e', 'sudo', '/usr/local/bin/pocketterm35-power', profile]))
+    device.pack_start(text('Experimental CPU overclock · reboot required'), False, False, 0)
+    device.pack_start(text('Off by default. May cause boot failure, data corruption or hardware damage. '
+                           'Cooling and stable external power are required; presets are not hardware-tested.', muted=True), False, False, 0)
+    clock_choice = Gtk.ComboBoxText()
+    for key, title in [('stock', 'Disable overclock (keep boot profile)'), ('1800', '1.8 GHz — experimental'), ('2000', '2.0 GHz — experimental, higher voltage')]:
+        clock_choice.append(key, title)
+    clock_choice.set_active_id('stock')
+    device.pack_start(clock_choice, False, False, 0)
+    def configure_clock(_):
+        launch(['foot', '-H', '-e', 'sudo', '/usr/local/bin/pocketterm35-overclock', clock_choice.get_active_id() or 'stock'])
+        notify('Opened an explicit sudo/risk prompt. No reboot or overclock is applied by this button alone.')
+    button(device, 'Configure next-boot CPU clock…', configure_clock)
     button(device, 'Read battery information', lambda widget: work(battery_text, notify, widget))
     device.pack_start(text('No automatic suspend. Battery telemetry and brightness depend on device firmware.', muted=True), False, False, 0)
 

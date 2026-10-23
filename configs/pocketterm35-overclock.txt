@@ -1,0 +1,1 @@
+# PocketTerm35 CPU overclock disabled; use firmware defaults.

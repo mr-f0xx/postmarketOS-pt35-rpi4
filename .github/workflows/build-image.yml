@@ -1,0 +1,83 @@
+name: Build PocketTerm35 Pi 4 image
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - arena/86442cc2-postmarketos-pt35-rpi4
+    paths:
+      - .github/workflows/build-image.yml
+      - scripts/**
+      - configs/**
+      - tools/**
+      - assets/**
+permissions:
+  contents: read
+concurrency:
+  group: pocketterm35-image-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  image:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Check configuration
+        run: sudo python3 -m unittest discover -s tests -v
+      - name: Install build-host dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git python3 python3-pip openssl xz-utils coreutils dosfstools e2fsprogs util-linux curl wget unzip qemu-user-static binfmt-support parted
+          df -h .
+      - name: Install pmbootstrap
+        run: sh scripts/01-install-pmbootstrap.sh
+      - name: Configure desktop image
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          sh scripts/02-configure-pmbootstrap.sh
+          sh scripts/03-prepare-dtbos.sh
+      - name: Build and customize SD-card image
+        run: |
+          export PATH="$HOME/.local/bin:$PATH"
+          sh scripts/04-build-image.sh
+          sh scripts/05-post-process.sh
+      - name: Compress successful image and write checksum
+        run: |
+          xz -T2 -c images/postmarketOS-latest.img > images/pocketterm35-pi4.img.xz
+          (cd images && sha256sum pocketterm35-pi4.img.xz > pocketterm35-pi4.img.xz.sha256)
+          cp docs/DEVICE-GUIDE.md images/DEVICE-GUIDE.md
+          {
+            echo '## Experimental PocketTerm35 Pi 4 image'
+            echo 'Download the SD-card-image artifact below and verify the SHA-256 checksum.'
+            echo 'Extract the .img.xz before flashing, or use an imager supporting xz.'
+            echo 'Login: flylopi / 0807. Change the password after boot.'
+            echo 'CPU overclock is disabled. Hardware compatibility is not certified.'
+            echo 'This is the Raspberry Pi OS image, NOT RP2040 keyboard firmware.'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pocketterm35-pi4-sd-card-image
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: error
+          path: |
+            images/pocketterm35-pi4.img.xz
+            images/pocketterm35-pi4.img.xz.sha256
+            images/*.build.txt
+            images/*.sources.sha256
+            images/packages-*.txt
+            images/DEVICE-GUIDE.md
+      - name: Collect build logs
+        if: always()
+        run: |
+          mkdir -p build-logs
+          log="$HOME/.local/var/pmbootstrap-pocketterm35-desktop/log.txt"
+          if sudo test -f "$log"; then sudo cat "$log" > build-logs/pmbootstrap.log; fi
+          df -h > build-logs/disk-space.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pocketterm35-build-logs
+          retention-days: 7
+          path: build-logs/

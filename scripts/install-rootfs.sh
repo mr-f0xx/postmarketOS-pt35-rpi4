@@ -19,7 +19,7 @@ put() {
     backup "$dest"
     install -m "$mode" "$PROJECT_DIR/$src" "$dest"
 }
-for name in pocketterm35-session pocketterm35-lock pocketterm35-idle pocketterm35-osk pocketterm35-bar pocketterm35-waybar pocketterm35-windows pocketterm35-power pocketterm35-zram pocketterm35-theme pocketterm35-launcher pocketterm35-notifications pocketterm35-fonts pocketterm35-apps; do
+for name in pocketterm35-session pocketterm35-lock pocketterm35-idle pocketterm35-osk pocketterm35-bar pocketterm35-waybar pocketterm35-windows pocketterm35-power pocketterm35-zram pocketterm35-theme pocketterm35-launcher pocketterm35-notifications pocketterm35-fonts pocketterm35-apps pocketterm35-overclock; do
     put 755 "tools/$name" "usr/local/bin/$name"
 done
 put 755 tools/pocketterm35-controls.py usr/local/bin/pocketterm35-controls

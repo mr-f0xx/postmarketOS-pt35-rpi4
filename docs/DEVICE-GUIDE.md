@@ -429,3 +429,63 @@ On device: verify every requested app launches, check large dialogs and keyboard
 navigation, test Imager on a spare drive only, and confirm fonts/labels survive
 color theme changes and reboot. RAM-heavy apps like Thunderbird and Telegram
 should not all run simultaneously on a 1–2 GB Pi without measuring memory use.
+
+## Optional CPU overclock (experimental)
+
+**Disabled by default.** Controls → Device offers next-boot CPU presets:
+
+| Choice | CPU maximum request | Firmware `over_voltage` |
+|---|---:|---:|
+| Disable overclock | No OC override; existing boot profile still applies | No OC override |
+| 1.8 GHz | 1800 MHz | 2 |
+| 2.0 GHz | 2000 MHz | 6 |
+
+These are **experimental configuration presets, not tested safe/stable settings**.
+The higher-voltage 2.0 GHz option especially requires adequate cooling and stable
+external power; it is not recommended for battery operation in a closed enclosure.
+Overclocking may cause boot failure, overheating, data corruption, hardware damage,
+and affect warranty coverage. Back up your card and have a second computer/card
+reader ready. A preset may not be achievable on every Pi 4 board/firmware.
+
+The GUI opens Foot with a normal sudo prompt. Enabling either preset additionally
+requires typing **OVERCLOCK** in the terminal. No automatic reboot occurs. The
+helper rejects non-Pi-4B boards, missing boot integration, conflicting explicit
+CPU settings in usercfg.txt (e.g. the powersave boot profile), and measured thermal
+zones already at/above 75°C. A cool idle reading does not prove thermal headroom
+or adequate power. It does not measure the supply or certify cooling.
+
+```sh
+pocketterm35-overclock status          # requested next-boot settings, not live clock
+sudo pocketterm35-overclock 1800       # interactive risk confirmation required
+sudo pocketterm35-overclock 2000       # interactive risk confirmation required
+sudo pocketterm35-overclock stock      # disable OC; manual reboot still required
+```
+
+Only CPU frequency and voltage offsets are written. GPU/RAM clocks, thermal limits,
+voltage warnings and turbo protection are not modified. The tool does not set
+force_turbo. The dedicated file is included at the end of every supplied boot
+profile, but enabling OC refuses conflicting usercfg CPU directives. Start with
+balanced/default firmware config, not the powersave boot file. Runtime battery
+profiles still cap CPU speed, and a persistent battery cap can prevent reaching
+an OC frequency. After boot, the balanced/performance runtime profile uses the
+kernel-advertised maximum—which may now include the selected OC request.
+
+The first dedicated-file contents are backed up once as
+`pocketterm35-overclock.txt.before-overclock` on the boot partition. Re-running
+image post-processing preserves an existing opt-in selection on that image;
+a new image starts disabled. Custom firmware config outside the supplied files
+can override/interact with this request; don't combine competing overclock tools.
+
+**If the Pi no longer boots:** power off, put the card in another computer, open
+the boot partition and replace `pocketterm35-overclock.txt` with just a comment:
+
+```text
+# Overclock disabled for recovery
+```
+
+Alternatively remove its `include pocketterm35-overclock.txt` line from usercfg.txt.
+There is **no automatic rollback/watchdog recovery**. Removing the OC request
+cannot repair files already corrupted by instability. Boot again at stock and
+inspect logs/storage health before trying another frequency. Test progressively
+under real workloads, watching temperature, frequency, undervoltage and USB errors.
+No speedup, hardware safety, or on-device validation is claimed by host tests.

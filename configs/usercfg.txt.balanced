@@ -12,3 +12,6 @@ dtoverlay=waveshare-35dpi-5b
 dtoverlay=dwc2,dr_mode=host
 # No RAM/GPU overclock, forced turbo, voltage changes or hidden warnings.
 arm_boost=0
+
+# Optional CPU boot preset, disabled unless explicitly enabled by the user.
+include pocketterm35-overclock.txt

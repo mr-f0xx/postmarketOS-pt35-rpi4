@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+"""Opt-in Pi 4 CPU boot presets. Experimental, not hardware-validated."""
+import argparse
+import os
+from pathlib import Path
+import re
+import sys
+import tempfile
+
+PRESETS = {'1800': (1800, 2), '2000': (2000, 6)}
+STOCK = '# PocketTerm35 CPU overclock disabled; use firmware defaults.\n'
+WARNING = ('Overclocking can cause overheating, undervoltage, boot failure, crashes, '
+           'data corruption and hardware damage, and may affect warranty coverage. '
+           'These presets are NOT validated on your device. Back up your card, use '
+           'adequate cooling and stable external power. No automatic recovery is provided.')
+
+
+def render(preset):
+    if preset == 'stock':
+        return STOCK
+    frequency, voltage = PRESETS[preset]
+    return (f'# EXPERIMENTAL PocketTerm35 Pi 4 CPU preset: {frequency} MHz\n'
+            '# No GPU/RAM overclock, force_turbo or thermal/warning overrides.\n'
+            '[all]\n'
+            f'arm_freq={frequency}\nover_voltage={voltage}\n')
+
+
+def validate(boot, model, preset):
+    if not re.search(r'Raspberry Pi 4 Model B\b', model):
+        raise ValueError('Only Raspberry Pi 4 Model B is supported')
+    if preset not in (*PRESETS, 'stock'):
+        raise ValueError('Unknown preset')
+    config = (boot / 'config.txt').read_text()
+    user = (boot / 'usercfg.txt').read_text()
+    if not re.search(r'^\s*include\s+usercfg\.txt\s*$', config, re.M):
+        raise ValueError('config.txt must include usercfg.txt')
+    if not re.search(r'^\s*include\s+pocketterm35-overclock\.txt\s*$', user, re.M):
+        raise ValueError('Install the updated PocketTerm35 boot configuration first')
+    if preset != 'stock' and re.search(r'^\s*(arm_freq|over_voltage|force_turbo)\s*=', user, re.M):
+        raise ValueError('Conflicting CPU settings in usercfg.txt; select balanced/default boot configuration first')
+
+
+def write_preset(boot, model, preset):
+    validate(boot, model, preset)
+    target = boot / 'pocketterm35-overclock.txt'
+    # Refuse symlinks so privileged writes cannot escape the selected boot directory.
+    if target.is_symlink():
+        raise ValueError('Refusing a symlinked overclock configuration')
+    backup = boot / 'pocketterm35-overclock.txt.before-overclock'
+    if backup.is_symlink():
+        raise ValueError('Refusing a symlinked backup')
+    if target.exists() and not backup.exists():
+        with backup.open('x') as stream:
+            stream.write(target.read_text())
+            stream.flush()
+            os.fsync(stream.fileno())
+    name = None
+    try:
+        with tempfile.NamedTemporaryFile(mode='w', dir=boot, prefix='.pt35-clock-', delete=False) as stream:
+            name = Path(stream.name)
+            stream.write(render(preset))
+            stream.flush()
+            os.fsync(stream.fileno())
+        name.chmod(0o644)
+        name.replace(target)
+        os.sync()
+    finally:
+        if name and name.exists():
+            name.unlink()
+
+
+def confirm_risk():
+    if not sys.stdin.isatty() or input('Type OVERCLOCK to accept these risks: ').strip() != 'OVERCLOCK':
+        raise ValueError('Cancelled; boot settings unchanged')
+
+
+def boot_directory():
+    candidates = [p for p in (Path('/boot'), Path('/boot/firmware'))
+                  if (p / 'config.txt').is_file() and (p / 'usercfg.txt').is_file()]
+    if len(candidates) != 1:
+        raise ValueError('Cannot identify exactly one configured boot directory')
+    return candidates[0]
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('preset', choices=('status', 'stock', *PRESETS))
+    args = parser.parse_args()
+    try:
+        boot = boot_directory()
+        model = Path('/proc/device-tree/model').read_text().replace('\x00', '')
+        if args.preset == 'status':
+            print((boot / 'pocketterm35-overclock.txt').read_text())
+            print('This is the requested NEXT-BOOT configuration, not measured CPU frequency.')
+            return
+        if os.geteuid() != 0:
+            parser.error('Run with sudo; no passwordless privileged helper is installed')
+        validate(boot, model, args.preset)
+        if args.preset != 'stock':
+            temperatures = list(Path('/sys/class/thermal').glob('thermal_zone*/temp'))
+            if any(int(path.read_text()) >= 75000 for path in temperatures):
+                raise ValueError('Device is already at or above 75°C; refusing to enable an overclock')
+            print(WARNING)
+            print('Requested preset:\n' + render(args.preset))
+            confirm_risk()
+        write_preset(boot, model, args.preset)
+        print(f'Saved {args.preset} configuration in {boot}. Reboot manually to apply.')
+        print('If boot fails: use another computer to replace pocketterm35-overclock.txt '
+              'on the boot partition with a comment-only file. No automatic reboot was performed.')
+    except (OSError, ValueError, EOFError) as error:
+        parser.exit(1, str(error) + '\n')
+
+if __name__ == '__main__':
+    main()

@@ -38,6 +38,10 @@ if ! grep -Eq '^[[:space:]]*include[[:space:]]+usercfg.txt' "$BOOT_MNT/config.tx
     printf '\n[all]\ninclude usercfg.txt\n' | sudo tee -a "$BOOT_MNT/config.txt" >/dev/null
 fi
 for file in "$PROJECT_DIR"/configs/usercfg.txt*; do sudo cp "$file" "$BOOT_MNT/"; done
+# Preserve an existing opt-in choice when post-processing the same image again.
+if [ ! -e "$BOOT_MNT/pocketterm35-overclock.txt" ]; then
+    sudo cp "$PROJECT_DIR/configs/pocketterm35-overclock.txt" "$BOOT_MNT/"
+fi
 sudo mkdir -p "$BOOT_MNT/overlays"
 sudo cp "$OVERLAY" "$BOOT_MNT/overlays/"
 # KMS uses the kernel video argument, not legacy framebuffer/hdmi_cvt settings.
