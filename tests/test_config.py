@@ -34,3 +34,24 @@ class ConfigurationTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class BuildConfigurationTests(unittest.TestCase):
+    def test_extra_packages_have_no_whitespace(self):
+        config = (ROOT / 'scripts/02-configure-pmbootstrap.sh').read_text()
+        line = next(line for line in config.splitlines() if line.startswith('extra_packages = '))
+        packages = line.split(' = ', 1)[1].split(',')
+        self.assertTrue(packages)
+        self.assertTrue(all(package and package == package.strip() for package in packages))
+        self.assertIn('aports = $PMAPORTS_DIR', config)
+        self.assertIn('pmb.config.work_version', config)
+
+    def test_device_kernel_paths_preserved_without_old_overclock(self):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location('merge_usercfg', ROOT / 'scripts/merge-usercfg.py')
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        text = module.merge('kernel=vmlinuz-rpi\ninitramfs initramfs\narm_control=0x200\narm_freq=2000\n',
+                            '[all]\ndtoverlay=vc4-kms-v3d\n')
+        self.assertIn('kernel=vmlinuz-rpi', text)
+        self.assertIn('initramfs initramfs', text)
+        self.assertNotIn('arm_freq=', text)

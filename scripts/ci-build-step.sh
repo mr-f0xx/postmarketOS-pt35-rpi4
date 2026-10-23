@@ -14,5 +14,17 @@ text = pathlib.Path(sys.argv[1]).read_text(errors='replace')[-10000:]
 text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
 print('::error title=Image build failure::' + text)
 PY
+    native_log="$HOME/.local/var/pmbootstrap-pocketterm35-desktop/log.txt"
+    if [ -f "$native_log" ]; then
+        python3 - "$native_log" <<'PYLOG'
+import pathlib
+import re
+import sys
+text = pathlib.Path(sys.argv[1]).read_text(errors='replace')[-14000:]
+text = re.sub(r'\x1b\[[0-9;]*m', '', text)
+text = text.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+print('::error title=pmbootstrap failure detail::' + text)
+PYLOG
+    fi
 fi
 exit "$status"
