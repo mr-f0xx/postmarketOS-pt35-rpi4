@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+case "${1:-toggle}" in
+    toggle)
+        if pgrep -u "$(id -u)" -x wvkbd-mobintl >/dev/null; then
+            pkill -u "$(id -u)" -x wvkbd-mobintl
+        else
+            # On demand only; enough room remains for terminal above keyboard.
+            wvkbd-mobintl -H 170 &
+        fi ;;
+    *) echo 'Usage: pocketterm35-osk toggle' >&2; exit 2 ;;
+esac

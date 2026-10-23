@@ -1,0 +1,3 @@
+#!/bin/sh
+# Icon grid retains searchable application names even in labels-hidden mode.
+exec pocketterm35-apps "$@"

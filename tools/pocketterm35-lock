@@ -1,0 +1,17 @@
+#!/bin/sh
+set -eu
+pgrep -u "$(id -u)" -x swaylock >/dev/null && exit 0
+# A daemonized lock synchronizes before returning. Idle blanking only proceeds
+# after swaylock successfully locks the compositor.
+makoctl mode -a locked 2>/dev/null || :
+color=15202b
+file=${XDG_CONFIG_HOME:-"$HOME/.config"}/pocketterm35/theme/lock-color
+if [ -f "$file" ]; then
+    candidate=$(cat "$file")
+    if printf '%s' "$candidate" | grep -Eq '^[0-9a-fA-F]{6}$'; then color=$candidate; fi
+fi
+swaylock -f -c "$color" || { makoctl mode -r locked 2>/dev/null || :; exit 1; }
+(
+    while pgrep -u "$(id -u)" -x swaylock >/dev/null; do sleep 1; done
+    makoctl mode -r locked 2>/dev/null || :
+) &

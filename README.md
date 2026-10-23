@@ -1,236 +1,171 @@
-# postmarketOS for Waveshare PocketTerm35 + Raspberry Pi 5
+# PocketTerm35 — optimized postmarketOS for Raspberry Pi 4B
 
-> **User:** pmos | **PIN:** 5115 | **UI:** Phosh | **Display:** 640x480
+**Pi 4B only · aarch64 · 640×480 landscape · desktop-only Sway**
 
-This repository contains an automated build pipeline to create a
-postmarketOS image for the **Waveshare PocketTerm35** with **Raspberry Pi 5**.
-The image includes all required Device Tree Overlays,
-display configurations, and undervoltage protection measures.
+**Login:** `flylopi` / **PIN/password:** `0807`. Change this public password with
+`passwd` after boot. The session starts a swaylock PIN/password lock; physical
+keyboard required for unlocking in Sway. This is not a validated release image.
 
----
+## What is optimized
 
-## Project Structure
+- Native scale **1**, borderless windows and one main application per workspace.
+  Extra non-floating windows move to a free workspace; dialogs stay with their app.
+- Compact **24-pixel Waybar**, fullscreen and bar visibility toggles. Network,
+  volume, battery, clock and workspace modules can be removed independently.
+- Foot terminal: 9-point font, 2-pixel padding, bounded scrollback, no blinking cursor.
+- Dynamic CPU governor, optional battery/performance profiles, no overclocking.
+- RAM-aware compressed swap: half of RAM, capped at **1 GiB**, priority 100.
+  Leaves pre-existing zram configurations and disk swap alone.
+- On-demand on-screen keyboard, compact notifications, five-minute idle lock/blanking.
+  No untested automatic suspend, guessed battery readings or firmware flashing.
+- No mobile shell, dialer, SMS client or contacts application is selected.
+- Repeatable file-only image customization, one-time boot/config backups, package
+  manifest, build provenance and final image checksum.
 
-```
-rpmos/
-├── README.md                       # This documentation
-├── scripts/
-│   ├── 00-run-all.sh               # Run all steps automatically (01-05)
-│   ├── 01-install-pmbootstrap.sh   # Install dependencies + pmbootstrap
-│   ├── 02-configure-pmbootstrap.sh # pmbootstrap init (RPi5, Phosh, pmos)
-│   ├── 03-prepare-dtbos.sh         # Download/extract Waveshare DTBOs
-│   ├── 04-build-image.sh           # Build postmarketOS image
-│   └── 05-post-process.sh          # Configure image (user, configs, etc.)
-├── configs/
-│   ├── config.txt                  # Default configuration (balanced)
-│   ├── config.txt.powersave        # Underclocked – no undervoltage
-│   ├── config.txt.balanced         # Balanced – default
-│   └── config.txt.performance      # Full performance – power supply only
-├── dtbos/                          # Waveshare .dtbo files (auto-downloaded)
-└── images/                         # Output: postmarketOS images
-    └── postmarketOS-latest.img     # Symlink to latest build
-```
+See [device guide](docs/DEVICE-GUIDE.md) for tuning, recovery and acceptance tests.
 
----
+## Build
 
-## Quick Start
+Use a normal **Linux user with sudo**, at least 25 GB free space and 2 GB RAM.
+Upstream GitLab, Alpine and postmarketOS mirrors must be reachable. Do not run
+the entire pipeline with sudo; individual commands request it.
 
-### Prerequisites
-
-- **Linux** x86_64 (pmbootstrap supports Linux only)
-- **~10 GB** free disk space (for build chroots)
-- **2+ GB RAM** recommended
-- **Fast internet connection** (first build downloads ~1-2 GB)
-
-### Running the Build
-
-```bash
-# 1. Run all scripts
-cd rpmos
-sudo ./scripts/00-run-all.sh
+```sh
+./scripts/00-run-all.sh
 ```
 
-Or step by step:
+Step 02 backs up the host configuration and configures **ui=sway**, not a Phosh
+base. It uses a new isolated work directory:
+`~/.local/var/pmbootstrap-pocketterm35-desktop`. Step 05 selects the compact
+PocketTerm35 desktop through tinydm. Phone UI/session selection is no longer
+supported. A stale mobile rootfs is rejected rather than carried into a release.
 
-```bash
-# 2. Or manually
-cd rpmos
-./scripts/01-install-pmbootstrap.sh
-source ~/.profile
-./scripts/02-configure-pmbootstrap.sh
-./scripts/03-prepare-dtbos.sh
-./scripts/04-build-image.sh
-sudo ./scripts/05-post-process.sh
-```
+For individual steps, run 01–05 in order as the same user. After step 01:
+`export PATH="$HOME/.local/bin:$PATH"`. `./scripts/07-preflight.sh` runs host
+checks without writing to a device. Host configuration backup:
+`~/.config/pmbootstrap_v3.cfg.before-pocketterm35`.
 
-### Flashing the Image (SD card or USB)
+Output is `images/postmarketOS-latest.img`, with checksum and provenance beside
+it and a timestamped installed-package list. These are ignored by Git.
 
-```bash
-# Identify device (CAUTION!)
-lsblk
+**Reproducibility limits:** package lists, source revision, source-file hashes
+and image checksum record what was built; this does not make rolling edge
+packages bit-for-bit reproducible. Preserve the image and source checkout for a
+known-working release. Do not update a deployed device blindly.
 
-# Flash image
+### Flashing
+
+Identify the target carefully (`lsblk`), then flash to microSD or supported USB
+storage. This **erases the selected drive**:
+
+```sh
 sudo dd if=images/postmarketOS-latest.img of=/dev/sdX bs=4M status=progress conv=fsync
 ```
 
-### Flashing the Image to NVMe (PocketTerm35)
+The Pi 4 does **not** support the Pi 5's native PCIe/NVMe connector. The legacy
+NVMe helper is not a direct Pi 4 NVMe boot solution. Storage expansion is left
+to the distribution, not a custom untested resize service.
 
-```bash
-# Automatic (detects connected NVMe)
-sudo ./scripts/06-flash-nvme.sh
+## Controls and shortcuts
 
-# Or manually
-sudo ./scripts/06-flash-nvme.sh /dev/nvme0n1
+Launch **PocketTerm35 Controls** from Apps or press **Super+P**.
+
+| Shortcut | Action |
+|---|---|
+| Super+Return / Alt+Return | Terminal |
+| Super+D | Application launcher |
+| Super+P | Controls: brightness and status-bar modules |
+| Super+L | Lock |
+| Super+F / Alt+F11 | Fullscreen (bar hidden) |
+| Super+B | Toggle bar visibility |
+| Super+Tab / Super+Shift+Tab | Next / previous workspace |
+| Super+1…4 | Workspace selection |
+| Super+R | Recover oversized window to 600×400 |
+| Super+Shift+Space | Toggle floating |
+| Super+O | Toggle software keyboard |
+| Super+Q | Close app |
+| Super+Shift+C | Reload Sway configuration |
+| Super+Shift+E | Confirm logout |
+| Ctrl+plus/minus / Ctrl+0 in Foot | Font resize / reset |
+
+The bar's **Apps**, workspace numbers and **Set** buttons are touch-accessible.
+Press Super+F again to leave fullscreen. Super+B restores a hidden bar.
+
+### Brightness and battery: hardware limits
+
+Original firmware copies show **Fn+minus** dims, **Fn+equals** brightens and
+**Fn+C** toggles backlight. Firmware variants may differ. These run directly on
+the RP2040 and do not need Linux support. When Linux exposes a real backlight,
+Controls offers `brightnessctl` adjustment from 5–100%; normal distribution
+permissions apply. Without a Linux backlight the GUI displays hardware-key
+instructions, not a fake slider. No gamma-based imitation is used.
+
+Battery percentage appears **only when a genuine Linux battery device is
+available**. RP2040-only telemetry is not implemented: it needs a verified
+firmware interface and a proper driver/UPower bridge. No speculative I²C reads,
+voltage-derived fake percentage or automatic low-battery shutdown is installed.
+
+## Hardware and overlay provenance
+
+The display is **HDMI, not DPI**. Boot uses full KMS, with HDMI-A-1 forced to
+640×480@60; connect the panel to HDMI0. Touch is Goodix GT911 over I²C and the
+RP2040 keyboard is USB HID. The device package's kernel/initramfs/DTB settings
+are retained; PocketTerm35 settings are included through `usercfg.txt`.
+
+The Waveshare overlay named **5b** supports the GT911 at `0x5d` on Pi 4 as well
+as `0x14`. The 4b overlay only probes `0x14`. Do not enable both. Step 03 uses
+[this pinned community mirror](https://github.com/therezor/PocketTerm35-OS/tree/8e5b919390e60f468e534770335abe8ae0cb2451/boot)
+of Waveshare's `3.5HDMI_E_DTBO.zip`, verifies SHA-256 and DTB magic, and fails
+rather than creating placeholders. See also the
+[community Pi 4 configuration](https://github.com/altgreen64/pocketterm35/tree/main/pocketterm35).
+
+## Validation status
+
+Host tests cover configuration, shell syntax, bar generation/CLI, brightness
+validation, CPU policy changes against fixtures, zram sizing, workspace placement
+and repeatable rootfs installation and previous-session backup. Run:
+
+```sh
+python3 -m unittest discover -s tests -v
+# Also exercises file-only rootfs install in a temporary fixture:
+sudo python3 -m unittest discover -s tests -v
 ```
 
-The script shows a confirmation prompt before writing and
-checks whether the image fits on the NVMe drive.
+**Not yet verified:** full image build/boot, Sway/Waybar rendering on the Pi,
+GPU acceleration, touch accuracy, firmware keys, battery telemetry and sustained
+thermal/power behaviour. This sandbox lacks the complete build toolchain and
+cannot reach the required GitLab/Alpine hosts. A successful configuration test
+is not evidence of working hardware. Follow the device guide before relying
+on the image.
 
----
+## Themes and wallpapers
 
-## Display Configuration (640x480)
+Controls includes **Nord, Amber on Black, Dracula, Tokyo Night, Solarized
+Dark/Light, Gruvbox Dark and Catppuccin Mocha**, plus **32 offline 640×480
+wallpapers** (mountains, grid, orbits and stars for every palette). Sway, Waybar,
+Foot, Wofi, notifications and lock-screen background use coordinated colors;
+Other GTK application themes are unchanged. Choose a solid background if
+preferred. See the device guide for CLI selection, backups and reset behaviour.
 
-The PocketTerm35 has a **3.5" IPS display with 640x480 pixels**,
-connected via the **DPI (Display Parallel Interface)** GPIO pinheader.
+### Customizable control center
 
-The config.txt uses:
-- `waveshare-35dpi-4b` / `waveshare-35dpi-5b` – DPI timings
-- `hdmi_cvt=640 480 60 6 0 0 0` – Custom mode
-- `framebuffer_width=640` / `framebuffer_height=480` – Framebuffer
+Controls now uses **Quick / Look / Bar / Device** pages in a compact **560×400**
+window. Use **Customize** to show, hide or reorder any Quick tile; even an empty
+layout is recoverable. Add Wi-Fi, Bluetooth, mute, Do Not Disturb, keyboard,
+lock, terminal, network setup and device shortcuts. The Bar page can hide every
+default module and optionally add CPU, memory, temperature, brightness or
+Bluetooth. Slow device commands run asynchronously. See the device guide for
+hardware limitations and the required on-device scaling checks.
 
-**DTBO source:** The overlays are provided by Waveshare
-(https://files.waveshare.com/wiki/common/3.5HDMI_E_DTBO.zip) and
-are downloaded automatically by script 03.
+### Desktop apps, fonts and icon labels
 
----
+The build now selects a **desktop-only Sway base**, not Phosh. It requests
+FileZilla, qBittorrent, Nicotine+, Thunderbird, Telegram Desktop and Raspberry Pi
+Imager, plus Foot and PCManFM. Nicotine+ and Imager require tagged Alpine
+edge/testing packages; full build/dependency validation is still pending.
 
-## Undervoltage Warnings
-
-The RPi5 is known for **undervoltage warnings** (lightning bolt symbol)
-when voltage drops below 4.65V. The PocketTerm35 is powered by an
-integrated battery, which is not always sufficiently stable under load.
-
-### Solutions in the Image
-
-**1. Reduce CPU clock (in config.txt)**
-
-| Profile | arm_freq | core_freq | sdram_freq | When? |
-|---------|----------|-----------|------------|-------|
-| `powersave` | 1500 MHz | 400 MHz | 3000 MHz | Battery operation |
-| `balanced` | 1800 MHz | 600 MHz | 3500 MHz | Default |
-| `performance` | 2400 MHz | 700 MHz | 4267 MHz | 27W PD power supply only |
-
-**Switching profiles:** Replace config.txt on the boot partition:
-
-```bash
-# Mount SD card
-sudo mount /dev/sdX1 /mnt/boot
-
-# Switch profile
-sudo cp /mnt/boot/config.txt.powersave /mnt/boot/config.txt
-
-# Or from another profile
-sudo cp /mnt/boot/config.txt.balanced /mnt/boot/config.txt
-
-sudo umount /mnt/boot
-```
-
-**2. Avoid Warnings**
-`avoid_warnings=2` suppresses the visual warnings.
-
-**3. Hardware Tips**
-- Use a high-quality USB-C cable (5A rated)
-- 27W+ USB-PD power supply (official RPi5 power supply recommended)
-- No power-hungry USB devices on the PocketTerm35 during battery operation
-- The official RPi5 power supply is required for stable operation
-
----
-
-## User Configuration
-
-| Property | Value |
-|----------|-------|
-| Username | `pmos` |
-| Password/PIN | `5115` |
-| Shell | `/bin/bash` |
-| Autologin | Phosh starts automatically |
-
-Change the password after the first boot:
-```bash
-passwd
-```
-
----
-
-## Troubleshooting
-
-### Keyboard not working (RP2040 I2C)
-
-The keyboard controller communicates via I2C. Check:
-
-```bash
-# Detect I2C bus
-i2cdetect -l
-
-# Find RP2040 (address 0x15 or 0x17)
-i2cdetect -y 1
-```
-
-### Display stays black
-
-1. Check if DTBOs are present in `/boot/overlays/`
-2. Unplug HDMI cable (the display runs via GPIO/DPI)
-3. Try a different profile (`config.txt.balanced` instead of `config.txt`)
-
-### Phosh is too small / too large
-
-```bash
-# Adjust zoom
-gsettings set org.gnome.desktop.interface text-scaling-factor 1.5
-
-# Or monitor scaling
-gsettings set org.gnome.mutter experimental-features "['scale-monitor-framebuffer']"
-```
-
----
-
-## Build Details
-
-### Software Used
-
-| Component | Version |
-|-----------|---------|
-| postmarketOS | edge / v24.12 |
-| pmbootstrap | latest (git) |
-| UI | phosh (Phosh Shell + phoc) |
-| Kernel | linux-rpi (Alpine/RPi) |
-| Init | OpenRC |
-
-### Required Packages on the Build Host
-
-- git, python3, openssl
-- xz-utils (for image compression)
-- dosfstools, e2fsprogs (for loop mount)
-- curl / wget (for DTBO download)
-
-### Known Limitations
-
-- `waveshare-35dpi-4b/5b` overlays may not be included in the mainline kernel
-  – they are obtained separately from Waveshare
-- Phosh is not ideally optimized for 640x480 – adjust scaling manually
-- The first build can take 30-120 minutes
-
----
-
-## License
-
-GPL-3.0 (like postmarketOS)
-
----
-
-## Links
-
-- [Waveshare PocketTerm35 Wiki](https://docs.waveshare.com/PocketTerm35/)
-- [postmarketOS Wiki](https://wiki.postmarketos.org/)
-- [pmbootstrap Repository](https://gitlab.postmarketos.org/postmarketOS/pmbootstrap)
-- [RPi5 config.txt Documentation](https://www.raspberrypi.com/documentation/computers/config_txt.html)
+Controls → Look offers installed terminal fonts and an app-grid label toggle.
+Font packages include JetBrains Mono, Hack, Fira Mono, Source Code Pro,
+Inconsolata, DejaVu, Liberation and Noto. **Neon80 needs a verified licensed source
+before bundling**; a personally installed licensed font becomes selectable.
+See the device guide for testing risks, font installation and app-size limits.

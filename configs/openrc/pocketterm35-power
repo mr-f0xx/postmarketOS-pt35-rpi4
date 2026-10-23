@@ -1,0 +1,6 @@
+#!/sbin/openrc-run
+description="PocketTerm35 dynamic CPU profile"
+depend() { after modules; }
+start() {
+    /usr/local/bin/pocketterm35-power "${profile:-balanced}"
+}

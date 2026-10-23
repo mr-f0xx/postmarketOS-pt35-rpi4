@@ -1,0 +1,92 @@
+{
+  "layer": "bottom",
+  "position": "top",
+  "height": 24,
+  "spacing": 2,
+  "modules-left": [
+    "custom/launcher",
+    "sway/workspaces"
+  ],
+  "modules-center": [
+    "clock"
+  ],
+  "modules-right": [
+    "network",
+    "pulseaudio",
+    "battery",
+    "custom/controls"
+  ],
+  "custom/launcher": {
+    "format": "Apps",
+    "tooltip": false,
+    "on-click": "pocketterm35-launcher"
+  },
+  "sway/workspaces": {
+    "disable-scroll": true,
+    "format": "{name}",
+    "persistent-workspaces": {
+      "1": [],
+      "2": [],
+      "3": [],
+      "4": []
+    }
+  },
+  "clock": {
+    "format": "{:%H:%M}",
+    "tooltip-format": "{:%A %d %B %Y}"
+  },
+  "network": {
+    "format-wifi": "WiFi {signalStrength}%",
+    "format-ethernet": "LAN",
+    "format-disconnected": "Offline",
+    "interval": 10,
+    "max-length": 12,
+    "on-click": "foot -e nmtui"
+  },
+  "pulseaudio": {
+    "format": "Vol {volume}%",
+    "format-muted": "Mute",
+    "on-click": "pactl set-sink-mute @DEFAULT_SINK@ toggle",
+    "on-scroll-up": "pactl set-sink-volume @DEFAULT_SINK@ +5%",
+    "on-scroll-down": "pactl set-sink-volume @DEFAULT_SINK@ -5%"
+  },
+  "battery": {
+    "format": "Bat {capacity}%",
+    "format-charging": "+{capacity}%",
+    "interval": 30,
+    "states": {
+      "warning": 20,
+      "critical": 10
+    }
+  },
+  "custom/controls": {
+    "format": "Set",
+    "tooltip": false,
+    "on-click": "pocketterm35-controls"
+  },
+  "id": "pt35",
+  "ipc": true,
+  "cpu": {
+    "format": "CPU {usage}%",
+    "interval": 5
+  },
+  "memory": {
+    "format": "RAM {percentage}%",
+    "interval": 10
+  },
+  "temperature": {
+    "format": "{temperatureC}\u00b0C",
+    "interval": 10
+  },
+  "backlight": {
+    "format": "Light {percent}%",
+    "on-scroll-up": "brightnessctl --class=backlight set +5%",
+    "on-scroll-down": "brightnessctl --class=backlight --min-value=1 set 5%-"
+  },
+  "bluetooth": {
+    "format": "BT {status}",
+    "format-disabled": "BT off",
+    "format-off": "BT off",
+    "max-length": 12
+  }
+}

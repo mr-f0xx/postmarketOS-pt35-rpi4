@@ -1,0 +1,15 @@
+#!/bin/sh
+set -eu
+base=${XDG_CONFIG_HOME:-"$HOME/.config"}/waybar
+config=/etc/xdg/waybar/pt35-base.json
+style=/etc/xdg/waybar/pt35-style.css
+[ ! -f "$base/config" ] || config="$base/config"
+[ ! -f "$base/style.css" ] || style="$base/style.css"
+theme=${XDG_CONFIG_HOME:-"$HOME/.config"}/pocketterm35/theme/waybar.css
+# Stable path lets SIGUSR2 reload pick up a newly applied theme.
+if [ ! -f "$theme" ]; then
+    mkdir -p "$(dirname "$theme")"
+    cp "$style" "$theme"
+fi
+style="$theme"
+exec waybar -c "$config" -s "$style" "$@"

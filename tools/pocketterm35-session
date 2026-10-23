@@ -1,0 +1,12 @@
+#!/bin/sh
+set -eu
+export XDG_CURRENT_DESKTOP=sway
+export XDG_SESSION_DESKTOP=pocketterm35
+export XDG_SESSION_TYPE=wayland
+# Let GTK use Wayland; retain X11 fallback for legacy applications.
+export GDK_BACKEND=wayland,x11
+# Preserve normal Mesa hardware selection. Never force software rendering.
+if [ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]; then
+    exec dbus-run-session -- sway -c /etc/sway/pocketterm35.conf "$@"
+fi
+exec sway -c /etc/sway/pocketterm35.conf "$@"

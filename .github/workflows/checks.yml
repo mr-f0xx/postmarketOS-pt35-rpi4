@@ -1,0 +1,13 @@
+name: Configuration checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unit and file-only rootfs integration tests
+        run: sudo python3 -m unittest discover -s tests -v
+      - name: Whitespace errors
+        run: git diff --check

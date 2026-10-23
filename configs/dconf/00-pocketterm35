@@ -1,0 +1,44 @@
+[org/gnome/desktop/interface]
+text-scaling-factor=1.0
+enable-animations=false
+clock-show-seconds=false
+font-name='Sans 10'
+monospace-font-name='Monospace 10'
+show-battery-percentage=true
+
+[org/gnome/desktop/input-sources]
+sources=[('xkb', 'us')]
+
+[org/gnome/desktop/session]
+idle-delay=uint32 300
+
+[org/gnome/desktop/screensaver]
+lock-enabled=true
+lock-delay=uint32 0
+
+[org/gnome/settings-daemon/plugins/power]
+idle-dim=true
+sleep-inactive-ac-type='nothing'
+sleep-inactive-battery-type='nothing'
+
+[org/gnome/desktop/notifications]
+show-in-lock-screen=false
+
+[org/gnome/settings-daemon/plugins/media-keys]
+custom-keybindings=['/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-terminal/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-controls/', '/org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-lock/']
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-terminal]
+name='PocketTerm35 Terminal'
+command='foot'
+binding='<Super>Return'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-controls]
+name='PocketTerm35 Controls'
+command='pocketterm35-controls'
+binding='<Super>p'
+
+[org/gnome/settings-daemon/plugins/media-keys/custom-keybindings/pt35-lock]
+name='Lock screen'
+command='loginctl lock-session'
+binding='<Super>l'
+

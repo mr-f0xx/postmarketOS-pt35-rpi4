@@ -1,0 +1,9 @@
+# Only our diagnostic log; don't override distribution log rotation policy.
+/var/log/pocketterm35.log {
+    size 256k
+    rotate 2
+    compress
+    missingok
+    notifempty
+    copytruncate
+}

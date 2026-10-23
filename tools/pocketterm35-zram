@@ -1,0 +1,76 @@
+#!/usr/bin/env python3
+"""Bounded RAM swap; never modifies fstab or an existing zram device."""
+import argparse
+import os
+from pathlib import Path
+import subprocess
+
+MARKER = Path('/run/pocketterm35-zram')
+
+
+def size_bytes(memory_kib):
+    # Half of RAM, capped at 1 GiB; disksize is a capacity, not reserved RAM.
+    return min(memory_kib * 1024 // 2, 1024 ** 3)
+
+
+def run(*args):
+    return subprocess.run(args, check=True, text=True, capture_output=True).stdout.strip()
+
+
+def start():
+    if MARKER.exists():
+        return
+    # Do not compete with the distro/user's zram configuration, even if not swap.
+    if any(Path('/sys/block').glob('zram*')):
+        print('Existing zram device/configuration detected; leaving it unchanged')
+        return
+    memory = next(int(line.split()[1]) for line in Path('/proc/meminfo').read_text().splitlines()
+                  if line.startswith('MemTotal:'))
+    run('modprobe', 'zram', 'num_devices=1')
+    device = run('zramctl', '--find')
+    if not device.startswith('/dev/zram') or not device[9:].isdigit():
+        raise ValueError('Unexpected zramctl device')
+    try:
+        algorithms = (Path('/sys/block') / Path(device).name / 'comp_algorithm').read_text()
+        available = algorithms.replace('[', '').replace(']', '').split()
+        algorithm = next((a for a in ('lz4', 'lzo-rle', 'lzo') if a in available), None)
+        command = ['zramctl', '--size', str(size_bytes(memory))]
+        if algorithm:
+            command.extend(['--algorithm', algorithm])
+        run(*command, device)
+        run('mkswap', device)
+        run('swapon', '--priority', '100', device)
+    except Exception:
+        # Never reset a device that somehow became active swap.
+        active = [line.split()[0] for line in Path('/proc/swaps').read_text().splitlines()[1:]]
+        if device not in active:
+            run('zramctl', '--reset', device)
+        raise
+    MARKER.write_text(device + '\n')
+
+
+def stop():
+    if not MARKER.exists():
+        return
+    device = MARKER.read_text().strip()
+    if not device.startswith('/dev/zram') or not device[9:].isdigit():
+        raise ValueError('Invalid zram marker')
+    # If RAM is insufficient, swapoff fails and marker/device remain intact.
+    run('swapoff', device)
+    run('zramctl', '--reset', device)
+    MARKER.unlink()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('start', 'stop'))
+    args = parser.parse_args()
+    if os.geteuid() != 0:
+        parser.error('Root required')
+    try:
+        start() if args.action == 'start' else stop()
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        parser.exit(1, str(error) + '\n')
+
+if __name__ == '__main__':
+    main()

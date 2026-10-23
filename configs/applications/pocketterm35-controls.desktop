@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=PocketTerm35 Controls
+Comment=Brightness, status icons, notifications and comfort
+Exec=pocketterm35-controls
+Icon=preferences-system
+Terminal=false
+Categories=Settings;HardwareSettings;
+X-Purism-FormFactor=Workstation;Mobile;
