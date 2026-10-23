@@ -13,9 +13,9 @@ class DesktopTests(unittest.TestCase):
         for package in ('filezilla', 'qbittorrent', 'thunderbird', 'telegram-desktop', 'foot', 'pcmanfm', 'font-jetbrains-mono', 'font-hack', 'font-fira-mono-ttf'):
             self.assertIn(package, config)
         build = (ROOT / 'scripts/04-build-image.sh').read_text()
-        self.assertIn('nicotine-plus@pt35testing', build)
-        self.assertIn('rpi-imager@pt35testing', build)
-        self.assertIn('@pt35testing https://dl-cdn.alpinelinux.org/alpine/edge/testing', build)
+        self.assertIn('nicotine-plus', config)
+        self.assertIn('rpi-imager', config)
+        self.assertNotIn('@pt35testing', build)
         self.assertNotIn('[sm/puri/phosh]', (ROOT / 'configs/dconf/00-pocketterm35').read_text())
 
     def test_font_override_follows_includes_and_keeps_colors(self):

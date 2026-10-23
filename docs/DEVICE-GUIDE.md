@@ -351,11 +351,13 @@ privileged write path works on this image.
 
 Recipes were checked in Alpine aports: FileZilla, qBittorrent, Thunderbird and
 Telegram Desktop are in community, while **nicotine-plus and rpi-imager are in
-edge/testing**. Provisioning adds a **tagged** testing repository and requests
-only those two packages with `@pt35testing`. Testing is not an untagged general
-upgrade source. This carries testing/dependency compatibility risk: if packages
-cannot be resolved on aarch64, the build must fail, not silently omit an app.
-Re-export after installation includes the additional apps in the image. A full
+edge/testing**. The current pmbootstrap edge channel includes Alpine testing by
+default; all requested applications are installed in one transaction. Earlier
+ad-hoc `@pt35testing` tags were incompatible with pmbootstrap regenerating its
+repository list and have been removed. This image follows the upstream rolling
+edge repository configuration; it is **not isolated from testing dependencies**.
+If packages cannot resolve on aarch64, the build fails rather than omitting them.
+Installing them in the first transaction includes them in the image. A full
 package download, dependency resolution and GUI launch test remain unverified in
 this network-restricted sandbox. Budget at least 25 GB on the build host and a
 32 GB target card; these desktop applications substantially increase image size.

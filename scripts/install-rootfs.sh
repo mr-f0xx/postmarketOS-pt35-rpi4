@@ -53,6 +53,13 @@ for service in pocketterm35-power pocketterm35-zram; do
 done
 mkdir -p "$ROOT/etc/conf.d"
 [ -f "$ROOT/etc/conf.d/pocketterm35-power" ] || printf 'profile="balanced"\n' > "$ROOT/etc/conf.d/pocketterm35-power"
+# Disable cellular services in the actual image, after package installation.
+for service in modemmanager ofono mmsd mmsd-tng; do
+    for level in boot default; do
+        link="$ROOT/etc/runlevels/$level/$service"
+        if [ -L "$link" ]; then rm "$link"; fi
+    done
+done
 # Save the previous display session for an explicit recovery path.
 mkdir -p "$ROOT/var/lib/tinydm"
 current="$ROOT/var/lib/tinydm/default-session.desktop"

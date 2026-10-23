@@ -37,33 +37,17 @@ START_TIME="$(date +%s)"
 # Pass password via --password flag (safer than yes-pipe)
 "$PMBOOTSTRAP" install --password 0807
 
-# Testing is tagged, not enabled as a general upgrade source. These two apps
-# currently live in Alpine edge/testing; dependency failures must stop the build.
+# All applications are installed in the first transaction. Current pmbootstrap
+# regenerates repositories and does not preserve ad-hoc apk repository tags.
 "$PMBOOTSTRAP" chroot -r -- sh -ec '
-    if apk info -e postmarketos-ui-phosh >/dev/null 2>&1; then
-        echo "Old mobile rootfs detected: build in a fresh pmbootstrap work directory." >&2
-        exit 1
-    fi
-    for package in calls gnome-calls chatty gnome-contacts; do
+    for package in postmarketos-ui-phosh calls gnome-calls chatty gnome-contacts; do
         if apk info -e "$package" >/dev/null 2>&1; then
-            echo "Unexpected phone application $package in rootfs; use a clean desktop build." >&2
+            echo "Unexpected phone application $package; use a clean desktop build." >&2
             exit 1
         fi
     done
-    # Never enable cellular modem or SMS services on this Wi-Fi/Bluetooth desktop.
-    for service in modemmanager ofono mmsd mmsd-tng; do
-        if [ -e "/etc/init.d/$service" ]; then
-            for level in boot default; do
-                if [ -L "/etc/runlevels/$level/$service" ]; then rc-update del "$service" "$level"; fi
-            done
-        fi
-    done
-    repo="@pt35testing https://dl-cdn.alpinelinux.org/alpine/edge/testing"
-    grep -qxF "$repo" /etc/apk/repositories || printf "%s\n" "$repo" >> /etc/apk/repositories
-    apk add nicotine-plus@pt35testing rpi-imager@pt35testing
+    apk info -e nicotine-plus rpi-imager filezilla qbittorrent thunderbird telegram-desktop
 '
-# Re-export the modified rootfs so the requested apps are in the final image.
-"$PMBOOTSTRAP" install --password 0807
 "$PMBOOTSTRAP" chroot -r -- sh -ec 'id flylopi; apk info -v'  > "$IMAGE_DIR/packages-${TIMESTAMP}.txt"
 END_TIME="$(date +%s)"
 DURATION="$((END_TIME - START_TIME))"

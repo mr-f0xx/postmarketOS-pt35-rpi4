@@ -161,7 +161,7 @@ hardware limitations and the required on-device scaling checks.
 
 The build now selects a **desktop-only Sway base**, not Phosh. It requests
 FileZilla, qBittorrent, Nicotine+, Thunderbird, Telegram Desktop and Raspberry Pi
-Imager, plus Foot and PCManFM. Nicotine+ and Imager require tagged Alpine
+Imager, plus Foot and PCManFM. Nicotine+ and Imager require Alpine
 edge/testing packages; full build/dependency validation is still pending.
 
 Controls → Look offers installed terminal fonts and an app-grid label toggle.
