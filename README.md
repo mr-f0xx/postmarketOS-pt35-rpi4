@@ -131,7 +131,11 @@ python3 -m unittest discover -s tests -v
 sudo python3 -m unittest discover -s tests -v
 ```
 
-**Not yet verified:** full image build/boot, Sway/Waybar rendering on the Pi,
+**Hosted build passed:** [2026-10-23 image build](https://github.com/mr-f0xx/postmarketOS-pt35-rpi4/actions/runs/40031788354), source `323fcf9`.
+The downloadable image artifact includes its checksum and build manifests. Artifacts
+expire after seven days. This establishes successful image construction, not hardware validation.
+
+**Not yet verified:** physical boot, Sway/Waybar rendering on the Pi,
 GPU acceleration, touch accuracy, firmware keys, battery telemetry and sustained
 thermal/power behaviour. This sandbox lacks the complete build toolchain and
 cannot reach the required GitLab/Alpine hosts. A successful configuration test
@@ -162,7 +166,7 @@ hardware limitations and the required on-device scaling checks.
 The build now selects a **desktop-only Sway base**, not Phosh. It requests
 FileZilla, qBittorrent, Nicotine+, Thunderbird, Telegram Desktop and Raspberry Pi
 Imager, plus Foot and PCManFM. Nicotine+ and Imager require Alpine
-edge/testing packages; full build/dependency validation is still pending.
+edge/testing packages; hosted build/dependency resolution passed; GUI/hardware testing is still pending.
 
 Controls → Look offers installed terminal fonts and an app-grid label toggle.
 Font packages include JetBrains Mono, Hack, Fira Mono, Source Code Pro,

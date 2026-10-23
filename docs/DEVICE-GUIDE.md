@@ -491,3 +491,29 @@ cannot repair files already corrupted by instability. Boot again at stock and
 inspect logs/storage health before trying another frequency. Test progressively
 under real workloads, watching temperature, frequency, undervoltage and USB errors.
 No speedup, hardware safety, or on-device validation is claimed by host tests.
+
+
+## First successful hosted test image
+
+The [2026-10-23 hosted run](https://github.com/mr-f0xx/postmarketOS-pt35-rpi4/actions/runs/40031788354)
+successfully built/customized source revision `323fcf9`, installed the requested
+applications, compressed the image, and uploaded the **pocketterm35-pi4-sd-card-image**
+artifact (about 459 MB ZIP). Artifacts expire after seven days, so save a local copy.
+This supersedes earlier notes that package resolution/image construction were
+unverified; **physical boot, GUI fit and all hardware behaviour remain unverified**.
+
+Download the artifact, unzip it, and verify the included compressed-image checksum:
+
+```sh
+sha256sum -c pocketterm35-pi4.img.xz.sha256
+```
+
+Use Raspberry Pi Imager → Use custom and select `pocketterm35-pi4.img.xz` (or extract
+it to `.img` first). Flash a **spare** microSD card; this erases that card. Keep your
+known-working card unchanged. This is the Raspberry Pi SD-card OS image, **not an
+RP2040 keyboard firmware file**. Do not flash it to the controller.
+
+Initial login is flylopi / 0807; change this public password before connecting to
+untrusted networks. The upstream installer enables SSH by default. Overclocking
+is disabled in the artifact. Run the hardware acceptance checklist on the actual
+PocketTerm35 before using the image for important data.
