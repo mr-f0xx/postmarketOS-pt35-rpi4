@@ -28,20 +28,20 @@ jobs:
       - name: Install build-host dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y git python3 python3-pip openssl xz-utils coreutils dosfstools e2fsprogs util-linux curl wget unzip qemu-user-static binfmt-support parted
+          sudo apt-get install -y git python3 python3-pip openssl xz-utils coreutils dosfstools e2fsprogs util-linux curl wget unzip parted
           df -h .
       - name: Install pmbootstrap
         run: sh scripts/01-install-pmbootstrap.sh
       - name: Configure desktop image
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          sh scripts/02-configure-pmbootstrap.sh
-          sh scripts/03-prepare-dtbos.sh
+          bash scripts/ci-build-step.sh build-logs/configure.txt sh scripts/02-configure-pmbootstrap.sh
+          bash scripts/ci-build-step.sh build-logs/overlays.txt sh scripts/03-prepare-dtbos.sh
       - name: Build and customize SD-card image
         run: |
           export PATH="$HOME/.local/bin:$PATH"
-          sh scripts/04-build-image.sh
-          sh scripts/05-post-process.sh
+          bash scripts/ci-build-step.sh build-logs/build.txt sh scripts/04-build-image.sh
+          bash scripts/ci-build-step.sh build-logs/customize.txt sh scripts/05-post-process.sh
       - name: Compress successful image and write checksum
         run: |
           xz -T2 -c images/postmarketOS-latest.img > images/pocketterm35-pi4.img.xz
