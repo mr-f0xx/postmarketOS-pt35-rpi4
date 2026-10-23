@@ -1,0 +1,55 @@
+#!/usr/bin/env python3
+"""Move extra non-dialog windows to a free workspace, avoiding tiny tiling splits."""
+import json
+import subprocess
+
+
+def leaves(node):
+    if node.get('type') == 'con' and not node.get('nodes'):
+        return [node] if node.get('app_id') or node.get('window') else []
+    return [leaf for child in node.get('nodes', []) for leaf in leaves(child)]
+
+
+def destination(tree, con_id):
+    used = set()
+    crowded = False
+    def walk(node):
+        nonlocal crowded
+        if node.get('type') == 'workspace':
+            windows = leaves(node)
+            if windows or node.get('floating_nodes'):
+                used.add(node.get('num'))
+            if any(w.get('id') == con_id for w in windows) and len(windows) > 1:
+                crowded = True
+        for child in node.get('nodes', []):
+            walk(child)
+    walk(tree)
+    if not crowded:
+        return None
+    number = 1
+    while number in used:
+        number += 1
+    return number
+
+
+def main():
+    with subprocess.Popen(['swaymsg', '-r', '-m', '-t', 'subscribe', '["window"]'],
+                          stdout=subprocess.PIPE, text=True) as subscriber:
+        for line in subscriber.stdout:
+            try:
+                event = json.loads(line)
+                if not isinstance(event, dict) or event.get('change') != 'new':
+                    continue
+                container = event['container']
+                # Floating windows/dialogs stay with their parent workspace.
+                if container.get('type') == 'floating_con' or container.get('floating', '').endswith('_on'):
+                    continue
+                tree = json.loads(subprocess.check_output(['swaymsg', '-t', 'get_tree'], text=True))
+                target = destination(tree, container['id'])
+                if target is not None:
+                    subprocess.run(['swaymsg', f'[con_id={int(container["id"])}] move container to workspace number {target}; workspace number {target}'], check=True)
+            except (ValueError, KeyError, subprocess.CalledProcessError) as error:
+                print(f'PocketTerm35 window placement: {error}', flush=True)
+
+if __name__ == '__main__':
+    main()

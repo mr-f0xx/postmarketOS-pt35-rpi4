@@ -1,0 +1,162 @@
+{
+  "nord-mountains.png": {
+    "name": "Nord \u2014 Mountains",
+    "theme": "nord",
+    "style": "mountains"
+  },
+  "nord-grid.png": {
+    "name": "Nord \u2014 Grid",
+    "theme": "nord",
+    "style": "grid"
+  },
+  "nord-orbits.png": {
+    "name": "Nord \u2014 Orbits",
+    "theme": "nord",
+    "style": "orbits"
+  },
+  "nord-stars.png": {
+    "name": "Nord \u2014 Stars",
+    "theme": "nord",
+    "style": "stars"
+  },
+  "amber-mountains.png": {
+    "name": "Amber on Black \u2014 Mountains",
+    "theme": "amber",
+    "style": "mountains"
+  },
+  "amber-grid.png": {
+    "name": "Amber on Black \u2014 Grid",
+    "theme": "amber",
+    "style": "grid"
+  },
+  "amber-orbits.png": {
+    "name": "Amber on Black \u2014 Orbits",
+    "theme": "amber",
+    "style": "orbits"
+  },
+  "amber-stars.png": {
+    "name": "Amber on Black \u2014 Stars",
+    "theme": "amber",
+    "style": "stars"
+  },
+  "dracula-mountains.png": {
+    "name": "Dracula \u2014 Mountains",
+    "theme": "dracula",
+    "style": "mountains"
+  },
+  "dracula-grid.png": {
+    "name": "Dracula \u2014 Grid",
+    "theme": "dracula",
+    "style": "grid"
+  },
+  "dracula-orbits.png": {
+    "name": "Dracula \u2014 Orbits",
+    "theme": "dracula",
+    "style": "orbits"
+  },
+  "dracula-stars.png": {
+    "name": "Dracula \u2014 Stars",
+    "theme": "dracula",
+    "style": "stars"
+  },
+  "tokyo-night-mountains.png": {
+    "name": "Tokyo Night \u2014 Mountains",
+    "theme": "tokyo-night",
+    "style": "mountains"
+  },
+  "tokyo-night-grid.png": {
+    "name": "Tokyo Night \u2014 Grid",
+    "theme": "tokyo-night",
+    "style": "grid"
+  },
+  "tokyo-night-orbits.png": {
+    "name": "Tokyo Night \u2014 Orbits",
+    "theme": "tokyo-night",
+    "style": "orbits"
+  },
+  "tokyo-night-stars.png": {
+    "name": "Tokyo Night \u2014 Stars",
+    "theme": "tokyo-night",
+    "style": "stars"
+  },
+  "solarized-dark-mountains.png": {
+    "name": "Solarized Dark \u2014 Mountains",
+    "theme": "solarized-dark",
+    "style": "mountains"
+  },
+  "solarized-dark-grid.png": {
+    "name": "Solarized Dark \u2014 Grid",
+    "theme": "solarized-dark",
+    "style": "grid"
+  },
+  "solarized-dark-orbits.png": {
+    "name": "Solarized Dark \u2014 Orbits",
+    "theme": "solarized-dark",
+    "style": "orbits"
+  },
+  "solarized-dark-stars.png": {
+    "name": "Solarized Dark \u2014 Stars",
+    "theme": "solarized-dark",
+    "style": "stars"
+  },
+  "solarized-light-mountains.png": {
+    "name": "Solarized Light \u2014 Mountains",
+    "theme": "solarized-light",
+    "style": "mountains"
+  },
+  "solarized-light-grid.png": {
+    "name": "Solarized Light \u2014 Grid",
+    "theme": "solarized-light",
+    "style": "grid"
+  },
+  "solarized-light-orbits.png": {
+    "name": "Solarized Light \u2014 Orbits",
+    "theme": "solarized-light",
+    "style": "orbits"
+  },
+  "solarized-light-stars.png": {
+    "name": "Solarized Light \u2014 Stars",
+    "theme": "solarized-light",
+    "style": "stars"
+  },
+  "gruvbox-mountains.png": {
+    "name": "Gruvbox Dark \u2014 Mountains",
+    "theme": "gruvbox",
+    "style": "mountains"
+  },
+  "gruvbox-grid.png": {
+    "name": "Gruvbox Dark \u2014 Grid",
+    "theme": "gruvbox",
+    "style": "grid"
+  },
+  "gruvbox-orbits.png": {
+    "name": "Gruvbox Dark \u2014 Orbits",
+    "theme": "gruvbox",
+    "style": "orbits"
+  },
+  "gruvbox-stars.png": {
+    "name": "Gruvbox Dark \u2014 Stars",
+    "theme": "gruvbox",
+    "style": "stars"
+  },
+  "catppuccin-mountains.png": {
+    "name": "Catppuccin Mocha \u2014 Mountains",
+    "theme": "catppuccin",
+    "style": "mountains"
+  },
+  "catppuccin-grid.png": {
+    "name": "Catppuccin Mocha \u2014 Grid",
+    "theme": "catppuccin",
+    "style": "grid"
+  },
+  "catppuccin-orbits.png": {
+    "name": "Catppuccin Mocha \u2014 Orbits",
+    "theme": "catppuccin",
+    "style": "orbits"
+  },
+  "catppuccin-stars.png": {
+    "name": "Catppuccin Mocha \u2014 Stars",
+    "theme": "catppuccin",
+    "style": "stars"
+  }
+}

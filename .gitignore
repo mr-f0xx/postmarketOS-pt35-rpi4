@@ -1,2 +1,5 @@
 dtbos/
 images/
+
+__pycache__/
+*.py[cod]

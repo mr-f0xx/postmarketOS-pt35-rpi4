@@ -1,6 +1,6 @@
 #!/bin/sh
 # 02-configure-pmbootstrap.sh
-# Initializes pmbootstrap for Raspberry Pi 5 + PocketTerm35 + Phosh
+# Desktop-only Sway build; no mobile shell or telephony UI.
 # Writes config directly (without interactive prompts)
 
 set -e
@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 
-echo "==> 02: pmbootstrap init – RPi5, PocketTerm35, Phosh"
+echo "==> 02: pmbootstrap init – RPi4, PocketTerm35, desktop Sway"
 
 PMBOOTSTRAP="$(command -v pmbootstrap || echo "$HOME/pmbootstrap/pmbootstrap.py")"
 if [ ! -x "$PMBOOTSTRAP" ]; then
@@ -17,7 +17,7 @@ if [ ! -x "$PMBOOTSTRAP" ]; then
 fi
 
 # Check if pmaports is already present
-PMAPORTS_DIR="$HOME/.local/var/pmbootstrap/cache_git/pmaports"
+PMAPORTS_DIR="$HOME/.local/var/pmbootstrap-pocketterm35-desktop/cache_git/pmaports"
 if [ ! -d "$PMAPORTS_DIR/.git" ]; then
     echo "==> pmaports not found. Cloning (this may take a while)..."
     mkdir -p "$PMAPORTS_DIR"
@@ -26,6 +26,10 @@ else
     echo "==> pmaports already present"
 fi
 
+# Preserve prior host configuration once; never silently lose a working setup.
+if [ -f "$HOME/.config/pmbootstrap_v3.cfg" ] && [ ! -e "$HOME/.config/pmbootstrap_v3.cfg.before-pocketterm35" ]; then
+    cp -p "$HOME/.config/pmbootstrap_v3.cfg" "$HOME/.config/pmbootstrap_v3.cfg.before-pocketterm35"
+fi
 echo "==> Writing pmbootstrap configuration..."
 
 mkdir -p "$HOME/.config"
@@ -34,23 +38,23 @@ cat > "$HOME/.config/pmbootstrap_v3.cfg" << CFGEOF
 boot_size = 512
 build_pkgs_on_install = false
 ccache_size = 5G
-device = raspberry-pi5
-extra_packages = none
+device = raspberry-pi4
+extra_packages = bash, upower, i2c-tools, evtest, libinput-tools, python3, py3-gobject3, gtk+3.0, brightnessctl, foot, font-dejavu, font-jetbrains-mono, font-hack, font-fira-mono-ttf, font-adobe-source-code-pro, font-inconsolata, font-liberation, font-noto, fontconfig, filezilla, qbittorrent, thunderbird, telegram-desktop, pcmanfm, elogind, sway, swaybg, swaylock, swayidle, waybar, wofi, mako, wvkbd-mobintl, xwayland, dbus, mesa-dri-gallium, mesa-utils, networkmanager-tui, pulseaudio-utils, bluez, util-linux, util-linux-misc, kmod, logrotate
 extra_space = 0
-hostname =
+hostname = pocketterm35
 jobs = 8
 kernel = rpi
-keymap =
+keymap = us
 locale = en_US.UTF-8
 ssh_key_glob = ~/.ssh/*.pub
 ssh_keys = false
 sudo_timer = false
-systemd = default
+systemd = never
 timezone = GMT
-ui = phosh
+ui = sway
 ui_extras = false
-user = pmos
-work = /home/admin/.local/var/pmbootstrap
+user = flylopi
+work = $HOME/.local/var/pmbootstrap-pocketterm35-desktop
 
 [providers]
 

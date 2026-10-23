@@ -1,0 +1,152 @@
+#!/usr/bin/env python3
+"""Offline theme/wallpaper selection for the PocketTerm35 Sway session."""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import shutil
+import subprocess
+
+ASSETS = Path('/usr/share/pocketterm35')
+
+
+def palettes():
+    data = json.loads((ASSETS / 'themes/palettes.json').read_text())
+    for palette in data.values():
+        for key in ('bg', 'fg', 'surface', 'accent', 'red', 'green', 'yellow', 'blue', 'magenta', 'cyan'):
+            if not re.fullmatch('[0-9a-fA-F]{6}', palette[key]):
+                raise ValueError('Invalid palette color')
+    return data
+
+
+def foot_colors(p):
+    colors = [p['bg'], p['red'], p['green'], p['yellow'], p['blue'], p['magenta'], p['cyan'], p['fg']]
+    text = f"[colors]\nbackground={p['bg']}\nforeground={p['fg']}\nselection-background={p['accent']}\nselection-foreground={p['bg']}\n"
+    for group in ('regular', 'bright'):
+        text += ''.join(f'{group}{i}={color}\n' for i, color in enumerate(colors))
+    return text
+
+
+def atomic(path, text):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + '.pt35-tmp')
+    tmp.write_text(text)
+    tmp.replace(path)
+
+
+def config_root():
+    return Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
+
+
+def refresh():
+    if os.environ.get('SWAYSOCK'):
+        subprocess.run(['swaymsg', 'reload'], check=True)
+        # Reload bar and notification colors without restarting the desktop.
+        subprocess.run(['pkill', '-USR2', '-u', str(os.getuid()), '-x', 'waybar'], check=False)
+        subprocess.run(['makoctl', 'reload'], check=False)
+
+
+def apply(name, wallpaper=None):
+    themes = palettes()
+    if name not in themes:
+        raise ValueError('Unknown theme')
+    manifest = json.loads((ASSETS / 'wallpapers/manifest.json').read_text())
+    wallpaper = wallpaper or f'{name}-mountains.png'
+    if wallpaper != 'solid' and wallpaper not in manifest:
+        raise ValueError('Choose a bundled wallpaper or solid')
+    p = themes[name]
+    root = config_root()
+    managed = root / 'pocketterm35/theme'
+    managed.mkdir(parents=True, exist_ok=True)
+    # Keep generated files separate from personal GTK, Waybar and Mako files.
+    atomic(managed / 'foot.ini', foot_colors(p))
+    foot = root / 'foot/foot.ini'
+    marker = root / 'pocketterm35/foot-theme-owner'
+    backup = root / 'pocketterm35/foot-before-theme.ini'
+    if not marker.exists():
+        if backup.exists():
+            raise ValueError('Old Foot backup exists; restore it before applying a new theme')
+        if foot.exists():
+            shutil.copy2(foot, backup)
+        atomic(marker, 'existing\n' if foot.exists() else 'new\n')
+    # Includes retain existing settings; only the palette is replaced.
+    include = backup if backup.exists() else Path('/etc/xdg/foot/foot.ini')
+    atomic(foot, f'[main]\ninclude={include}\ninclude={managed / "foot.ini"}\n')
+    style = root / 'waybar/style.css'
+    source = style if style.exists() else Path('/etc/xdg/waybar/pt35-style.css')
+    atomic(managed / 'waybar.css', f'@import url({json.dumps(source.as_uri())});\n'
+           f'window#waybar {{ background: #{p["bg"]}; color: #{p["fg"]}; }}\n'
+           f'#workspaces button {{ color: #{p["fg"]}; }}\n'
+           f'#workspaces button.focused {{ background: #{p["surface"]}; color: #{p["accent"]}; }}\n'
+           f'#battery.warning {{ color: #{p["yellow"]}; }}\n#battery.critical {{ color: #{p["red"]}; }}\n')
+    atomic(managed / 'wofi.css', f'* {{ font-family: "DejaVu Sans"; font-size: 13px; }}\n'
+           f'window, #input {{ background: #{p["bg"]}; color: #{p["fg"]}; }}\n'
+           f'#entry:selected {{ background: #{p["surface"]}; color: #{p["accent"]}; }}\n')
+    base = (ASSETS / 'themes/mako-base.conf').read_text()
+    atomic(managed / 'mako.conf', f'background-color=#{p["bg"]}\ntext-color=#{p["fg"]}\nborder-color=#{p["accent"]}\n' + base)
+    background = (f'output * bg #{p["bg"]} solid_color' if wallpaper == 'solid' else
+                  f'output * bg "{ASSETS / "wallpapers" / wallpaper}" fill')
+    atomic(managed / 'sway.conf',
+           f'client.focused #{p["accent"]} #{p["surface"]} #{p["fg"]} #{p["accent"]} #{p["accent"]}\n'
+           f'client.unfocused #{p["surface"]} #{p["bg"]} #{p["fg"]} #{p["surface"]} #{p["surface"]}\n' + background + '\n')
+    atomic(managed / 'lock-color', p['bg'] + '\n')
+    atomic(managed / 'selection.json', json.dumps({'theme': name, 'wallpaper': wallpaper}) + '\n')
+    # Font preferences are independent of color palettes, including reset.
+    if (root / 'pocketterm35/font.json').exists():
+        subprocess.run(['pocketterm35-fonts', 'reapply'], check=True)
+    refresh()
+
+
+def reset():
+    root = config_root()
+    marker = root / 'pocketterm35/foot-theme-owner'
+    backup = root / 'pocketterm35/foot-before-theme.ini'
+    foot = root / 'foot/foot.ini'
+    if marker.exists():
+        if marker.read_text().strip() == 'existing':
+            if not backup.exists():
+                raise ValueError('Foot backup missing; refusing to remove current configuration')
+            shutil.copy2(backup, foot)
+            backup.unlink()
+        elif foot.exists():
+            foot.unlink()
+        marker.unlink()
+    managed = root / 'pocketterm35/theme'
+    default_mako = root / 'mako/config'
+    atomic(managed / 'mako.conf', default_mako.read_text() if default_mako.exists() else
+           (ASSETS / 'themes/mako-base.conf').read_text())
+    original_style = root / 'waybar/style.css'
+    source = original_style if original_style.exists() else Path('/etc/xdg/waybar/pt35-style.css')
+    atomic(managed / 'waybar.css', f'@import url({json.dumps(source.as_uri())});\n')
+    for filename in ('foot.ini', 'wofi.css', 'sway.conf', 'lock-color', 'selection.json'):
+        (managed / filename).unlink(missing_ok=True)
+    if os.environ.get('SWAYSOCK'):
+        subprocess.run(['swaymsg', 'output', '*', 'bg', '#15202b', 'solid_color'], check=True)
+    # Font preferences are independent of color palettes, including reset.
+    if (root / 'pocketterm35/font.json').exists():
+        subprocess.run(['pocketterm35-fonts', 'reapply'], check=True)
+    refresh()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('list', 'apply', 'reset'))
+    parser.add_argument('theme', nargs='?')
+    parser.add_argument('--wallpaper', help='Bundled filename or solid; defaults to matching mountains')
+    args = parser.parse_args()
+    try:
+        if args.action == 'list':
+            for key, p in palettes().items():
+                print(key + ': ' + p['name'])
+        elif args.action == 'reset':
+            reset()
+        elif args.theme:
+            apply(args.theme, args.wallpaper)
+        else:
+            parser.error('apply requires a theme name')
+    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+        parser.exit(1, str(error) + '\n')
+
+if __name__ == '__main__':
+    main()

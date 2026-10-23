@@ -1,0 +1,67 @@
+#!/usr/bin/env python3
+"""Waybar settings with proper module removal, no GTK CSS tricks in Sway."""
+import argparse
+import json
+import os
+from pathlib import Path
+import subprocess
+
+BASE = Path('/etc/xdg/waybar/pt35-base.json')
+OPTIONAL = ('network', 'pulseaudio', 'battery', 'clock', 'sway/workspaces', 'custom/launcher', 'custom/controls', 'cpu', 'memory', 'temperature', 'backlight', 'bluetooth')
+EXTRA = ('cpu', 'memory', 'temperature', 'backlight', 'bluetooth')
+
+def configure(base, hidden, extra=()):
+    result = json.loads(json.dumps(base))
+    for group in ('modules-left', 'modules-center', 'modules-right'):
+        result[group] = [module for module in result.get(group, []) if module not in hidden]
+    for module in extra:
+        if module in EXTRA and module not in hidden and module not in result['modules-right']:
+            result['modules-right'].append(module)
+    return result
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('hide', 'show', 'reset', 'toggle'))
+    parser.add_argument('modules', nargs='*', metavar='MODULE', help=', '.join(OPTIONAL))
+    args = parser.parse_args()
+    if set(args.modules) - set(OPTIONAL):
+        parser.error('Unknown module; choose from ' + ', '.join(OPTIONAL))
+    if args.action in ('reset', 'toggle') and args.modules:
+        parser.error('reset/toggle do not accept module arguments')
+    if args.action == 'toggle':
+        subprocess.run(['swaymsg', 'bar', 'mode', 'toggle', 'pt35'], check=True)
+        return
+    directory = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'waybar'
+    directory.mkdir(parents=True, exist_ok=True)
+    state = directory / 'pt35-hidden.json'
+    hidden = set(json.loads(state.read_text())) & set(OPTIONAL) if state.exists() else set()
+    if args.action == 'hide':
+        hidden.update(args.modules)
+    elif args.action == 'show':
+        hidden.difference_update(args.modules)
+    else:
+        hidden.clear()
+    extra_state = directory / 'pt35-extra.json'
+    extra = set(json.loads(extra_state.read_text())) & set(EXTRA) if extra_state.exists() else set()
+    if args.action == 'show':
+        extra.update(set(args.modules) & set(EXTRA))
+    elif args.action == 'hide':
+        extra.difference_update(args.modules)
+    elif args.action == 'reset':
+        extra.clear()
+    target = directory / 'config'
+    if target.exists() and not state.exists():
+        backup = directory / 'config.before-pocketterm35'
+        if backup.exists():
+            parser.error('Existing backup found; move it before replacing your Waybar config')
+        backup.write_bytes(target.read_bytes())
+    temp = directory / 'config.pt35-tmp'
+    temp.write_text(json.dumps(configure(json.loads(BASE.read_text()), hidden, sorted(extra)), indent=2) + '\n')
+    temp.replace(target)
+    # User stylesheet, if present, takes precedence over the system compact style.
+    state.write_text(json.dumps(sorted(hidden)) + '\n')
+    extra_state.write_text(json.dumps(sorted(extra)) + '\n')
+    subprocess.run(['pkill', '-USR2', '-u', str(os.getuid()), '-x', 'waybar'], check=False)
+
+if __name__ == '__main__':
+    main()

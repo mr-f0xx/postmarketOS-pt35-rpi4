@@ -1,6 +1,6 @@
 #!/bin/sh
 # 04-build-image.sh
-# Builds the postmarketOS image for PocketTerm35 with Phosh
+# Builds the postmarketOS image for PocketTerm35 with desktop-only Sway
 # Set PMB_SUDO for passwordless sudo (wrapper) or ensure
 # the user can run sudo without a password.
 
@@ -10,7 +10,7 @@ SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 IMAGE_DIR="$PROJECT_DIR/images"
 TIMESTAMP="$(date +%Y%m%d-%H%M%S)"
-IMAGE_NAME="postmarketOS-pocketterm35-phosh-${TIMESTAMP}.img"
+IMAGE_NAME="postmarketOS-pocketterm35-pi4-${TIMESTAMP}.img"
 
 echo "==> 04: Building postmarketOS image for PocketTerm35"
 
@@ -24,7 +24,7 @@ fi
 
 # ---- Start build ----
 echo "==> Starting pmbootstrap install"
-echo "    User password / PIN: 5115"
+echo "    User password / PIN: 0807"
 echo "    Target: image file (not SD card)"
 echo "    This can take 30-120 minutes (depending on CPU/internet)"
 echo ""
@@ -32,9 +32,39 @@ echo ""
 # Measure time
 START_TIME="$(date +%s)"
 
+# Configure target services via pmbootstrap/QEMU, not an architecture-dependent chroot.
+# Install creates the rootfs before we can run target commands.
 # Pass password via --password flag (safer than yes-pipe)
-"$PMBOOTSTRAP" install --password 5115
+"$PMBOOTSTRAP" install --password 0807
 
+# Testing is tagged, not enabled as a general upgrade source. These two apps
+# currently live in Alpine edge/testing; dependency failures must stop the build.
+"$PMBOOTSTRAP" chroot -r -- sh -ec '
+    if apk info -e postmarketos-ui-phosh >/dev/null 2>&1; then
+        echo "Old mobile rootfs detected: build in a fresh pmbootstrap work directory." >&2
+        exit 1
+    fi
+    for package in calls gnome-calls chatty gnome-contacts; do
+        if apk info -e "$package" >/dev/null 2>&1; then
+            echo "Unexpected phone application $package in rootfs; use a clean desktop build." >&2
+            exit 1
+        fi
+    done
+    # Never enable cellular modem or SMS services on this Wi-Fi/Bluetooth desktop.
+    for service in modemmanager ofono mmsd mmsd-tng; do
+        if [ -e "/etc/init.d/$service" ]; then
+            for level in boot default; do
+                if [ -L "/etc/runlevels/$level/$service" ]; then rc-update del "$service" "$level"; fi
+            done
+        fi
+    done
+    repo="@pt35testing https://dl-cdn.alpinelinux.org/alpine/edge/testing"
+    grep -qxF "$repo" /etc/apk/repositories || printf "%s\n" "$repo" >> /etc/apk/repositories
+    apk add nicotine-plus@pt35testing rpi-imager@pt35testing
+'
+# Re-export the modified rootfs so the requested apps are in the final image.
+"$PMBOOTSTRAP" install --password 0807
+"$PMBOOTSTRAP" chroot -r -- sh -ec 'id flylopi; apk info -v'  > "$IMAGE_DIR/packages-${TIMESTAMP}.txt"
 END_TIME="$(date +%s)"
 DURATION="$((END_TIME - START_TIME))"
 echo "==> Build completed in ${DURATION}s"
@@ -43,23 +73,16 @@ echo "==> Build completed in ${DURATION}s"
 echo "==> Copying image to $IMAGE_DIR/"
 
 # pmbootstrap stores the image in chroot_native
-WORK_DIR="$("$PMBOOTSTRAP" config work 2>/dev/null || echo "$HOME/.local/var/pmbootstrap")"
-IMG_SRC="$WORK_DIR/chroot_native/home/pmos/rootfs/raspberry-pi5.img"
+WORK_DIR="$("$PMBOOTSTRAP" config work 2>/dev/null || echo "$HOME/.local/var/pmbootstrap-pocketterm35-desktop")"
+IMG_SRC="$WORK_DIR/chroot_native/home/pmos/rootfs/raspberry-pi4.img"
 if [ -f "$IMG_SRC" ]; then
     cp "$IMG_SRC" "$IMAGE_DIR/$IMAGE_NAME"
     echo "    -> $IMAGE_DIR/$IMAGE_NAME"
     ln -sf "$IMAGE_NAME" "$IMAGE_DIR/postmarketOS-latest.img"
     echo "    -> Symlink: images/postmarketOS-latest.img"
 else
-    # Fallback: search images directory
-    LATEST_IMG="$(ls -t "$WORK_DIR"/images/*.img 2>/dev/null | head -1)"
-    if [ -n "$LATEST_IMG" ]; then
-        cp "$LATEST_IMG" "$IMAGE_DIR/$IMAGE_NAME"
-        echo "    -> $IMAGE_DIR/$IMAGE_NAME"
-    else
-        echo "Warning: Image not found automatically."
-        echo "  -> Search in: $WORK_DIR"
-    fi
+    echo "ERROR: Expected Pi 4 image missing: $IMG_SRC" >&2
+    exit 1
 fi
 
 # pmbootstrap shutdown
@@ -69,4 +92,4 @@ echo ""
 echo "==> 04: Done! Image created."
 ls -lh "$IMAGE_DIR/$IMAGE_NAME" 2>/dev/null || echo "    (retrieve image manually from $WORK_DIR)"
 echo ""
-echo "    Next: sudo ./05-post-process.sh"
+echo "    Next: ./05-post-process.sh"

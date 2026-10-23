@@ -1,0 +1,5 @@
+#!/sbin/openrc-run
+description="PocketTerm35 bounded compressed RAM swap"
+depend() { need localmount; after modules; before tinydm display-manager; }
+start() { /usr/local/bin/pocketterm35-zram start; }
+stop() { /usr/local/bin/pocketterm35-zram stop; }

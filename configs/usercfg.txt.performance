@@ -1,0 +1,14 @@
+# PocketTerm35 + Raspberry Pi 4B only.
+# Keep the device package's kernel/initramfs/DTB settings in config.txt.
+[all]
+dtoverlay=vc4-kms-v3d
+disable_overscan=1
+dtparam=audio=on
+dtparam=i2c_arm=on
+# Despite its name, 5b includes the PocketTerm35 GT911 at 0x5d on Pi 4.
+# The 4b overlay only probes 0x14. This is touch, not a DPI display driver.
+dtoverlay=waveshare-35dpi-5b
+# RP2040 keyboard is USB HID, not I2C.
+dtoverlay=dwc2,dr_mode=host
+# No RAM/GPU overclock, forced turbo, voltage changes or hidden warnings.
+arm_boost=0

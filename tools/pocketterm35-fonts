@@ -1,0 +1,78 @@
+#!/usr/bin/env python3
+"""Select an installed terminal font, preserving unrelated Foot settings."""
+import argparse
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+
+
+def families():
+    output = subprocess.check_output(['fc-list', '--format=%{family}\n'], text=True, timeout=10)
+    return sorted({line.split(',')[0].strip() for line in output.splitlines() if line.strip()}, key=str.casefold)
+
+
+def set_font(text, family, size):
+    if not re.fullmatch(r'[\w .+()\-]{1,100}', family) or not 8 <= size <= 14:
+        raise ValueError('Choose a font family and a size between 8 and 14')
+    result, in_main, found = [], False, False
+    for line in text.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('[') and stripped.endswith(']'):
+            if in_main:
+                result.append(f'font={family}:size={size}')
+            in_main = stripped == '[main]'
+            found = found or in_main
+        if in_main and re.match(r'\s*font\s*=', line):
+            continue
+        result.append(line)
+    if in_main:
+        result.append(f'font={family}:size={size}')
+    if not found:
+        result = ['[main]', f'font={family}:size={size}', *result]
+    return '\n'.join(result) + '\n'
+
+
+def apply(family, size):
+    if family not in families():
+        raise ValueError('Font is not installed; install a licensed font file and run fc-cache first')
+    root = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config'))
+    foot = root / 'foot/foot.ini'
+    foot.parent.mkdir(parents=True, exist_ok=True)
+    old = foot.read_text() if foot.exists() else '[main]\ninclude=/etc/xdg/foot/foot.ini\n'
+    backup = foot.with_name('foot.ini.before-font-choice')
+    if foot.exists() and not backup.exists():
+        backup.write_text(old)
+    new = set_font(old, family, size)
+    temp = foot.with_suffix('.font-tmp')
+    temp.write_text(new)
+    temp.replace(foot)
+    state = root / 'pocketterm35/font.json'
+    state.parent.mkdir(parents=True, exist_ok=True)
+    state.write_text(json.dumps({'family': family, 'size': size}) + '\n')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('list', 'apply', 'reapply'))
+    parser.add_argument('family', nargs='?')
+    parser.add_argument('--size', type=int, default=9)
+    args = parser.parse_args()
+    try:
+        if args.action == 'list':
+            print('\n'.join(families()))
+        elif args.action == 'reapply':
+            state = Path(os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')) / 'pocketterm35/font.json'
+            if state.exists():
+                data = json.loads(state.read_text())
+                apply(data['family'], data['size'])
+        elif args.family:
+            apply(args.family, args.size)
+        else:
+            parser.error('apply requires an installed font family')
+    except (OSError, ValueError, KeyError, subprocess.SubprocessError) as error:
+        parser.exit(1, str(error) + '\n')
+
+if __name__ == '__main__':
+    main()

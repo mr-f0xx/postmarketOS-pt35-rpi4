@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=PocketTerm35 (Sway)
+Comment=Compact keyboard-first desktop for the PocketTerm35
+Exec=/usr/local/bin/pocketterm35-session
+Type=Application
+DesktopNames=sway

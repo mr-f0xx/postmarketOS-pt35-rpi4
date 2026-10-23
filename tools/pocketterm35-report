@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+"""Read-only device report; review for private device/network details before sharing."""
+import os
+from pathlib import Path
+import shutil
+import subprocess
+
+
+def command(args):
+    print('\n$ ' + ' '.join(args), flush=True)
+    if not shutil.which(args[0]):
+        print('Not installed')
+        return
+    try:
+        result = subprocess.run(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, errors='replace', timeout=15)
+        print(result.stdout[:65536])
+        print('Exit:', result.returncode)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        print(str(error))
+
+
+def main():
+    print('PocketTerm35 read-only report. No password files or Wi-Fi credentials collected.')
+    command(['pocketterm35-check'])
+    command(['uname', '-a'])
+    command(['free', '-m'])
+    command(['swapon', '--show'])
+    command(['zramctl'])
+    command(['df', '-h', '/'])
+    command(['rc-status'])
+    for policy in sorted(Path('/sys/devices/system/cpu/cpufreq').glob('policy[0-9]*')):
+        for key in ('scaling_governor', 'scaling_cur_freq', 'scaling_max_freq', 'cpuinfo_max_freq'):
+            path = policy / key
+            if path.is_file():
+                print(str(path), path.read_text().strip())
+    for path in sorted(Path('/sys/class/thermal').glob('thermal_zone*/temp')):
+        print(str(path), path.read_text().strip())
+    command(['ls', '-l', '/dev/dri'])
+    if os.environ.get('SWAYSOCK'):
+        command(['swaymsg', '-t', 'get_version'])
+        command(['swaymsg', '-t', 'get_outputs'])
+        command(['swaymsg', '-t', 'get_inputs'])
+    # Run inside the graphical session; reports errors instead of assuming GPU use.
+    command(['eglinfo', '-B'])
+    command(['dmesg'])
+    print('\nLook for V3D hardware rendering; llvmpipe/softpipe indicate software rendering.')
+    print('GPU acceleration, temperatures, touch and battery still require device testing.')
+
+if __name__ == '__main__':
+    main()

@@ -1,0 +1,7 @@
+* { font-family: "DejaVu Sans"; font-size: 11px; min-height: 0; border-radius: 0; }
+window#waybar { background: #15202b; color: #eeeeee; }
+#workspaces button { padding: 0 5px; min-width: 18px; color: #dddddd; border: none; }
+#workspaces button.focused { background: #325b78; }
+#clock, #battery, #network, #pulseaudio, #custom-controls, #custom-launcher { padding: 0 5px; }
+#battery.warning { color: #ffcf60; }
+#battery.critical { color: #ff7070; }

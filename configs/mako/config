@@ -1,0 +1,18 @@
+font=DejaVu Sans 10
+width=340
+height=110
+margin=4
+padding=6
+border-size=1
+border-radius=0
+max-visible=2
+default-timeout=5000
+ignore-timeout=1
+max-icon-size=32
+# No notification content displayed over swaylock.
+[mode=locked]
+invisible=1
+
+# User-selected Do Not Disturb is independent of lock-screen privacy.
+[mode=do-not-disturb]
+invisible=1

@@ -1,0 +1,10 @@
+#!/bin/sh
+set -eu
+root=${XDG_CONFIG_HOME:-"$HOME/.config"}
+config="$root/pocketterm35/theme/mako.conf"
+if [ ! -f "$config" ]; then
+    mkdir -p "$(dirname "$config")"
+    if [ -f "$root/mako/config" ]; then cp "$root/mako/config" "$config";
+    else cp /etc/xdg/mako/config "$config"; fi
+fi
+exec mako -c "$config"
