@@ -4,6 +4,7 @@
 dtoverlay=vc4-kms-v3d
 disable_overscan=1
 dtparam=audio=on
+dtparam=krnbt=on
 dtparam=i2c_arm=on
 # Despite its name, 5b includes the PocketTerm35 GT911 at 0x5d on Pi 4.
 # The 4b overlay only probes 0x14. This is touch, not a DPI display driver.

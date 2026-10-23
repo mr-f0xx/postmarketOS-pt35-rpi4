@@ -37,7 +37,13 @@ done
 if ! grep -Eq '^[[:space:]]*include[[:space:]]+usercfg.txt' "$BOOT_MNT/config.txt"; then
     printf '\n[all]\ninclude usercfg.txt\n' | sudo tee -a "$BOOT_MNT/config.txt" >/dev/null
 fi
-for file in "$PROJECT_DIR"/configs/usercfg.txt*; do sudo cp "$file" "$BOOT_MNT/"; done
+for file in "$PROJECT_DIR"/configs/usercfg.txt*; do
+    if [ -f "$BOOT_MNT/usercfg.txt.before-pocketterm35" ]; then
+        python3 "$PROJECT_DIR/scripts/merge-usercfg.py" "$BOOT_MNT/usercfg.txt.before-pocketterm35" "$file" | sudo tee "$BOOT_MNT/$(basename "$file")" >/dev/null
+    else
+        sudo cp "$file" "$BOOT_MNT/"
+    fi
+done
 # Preserve an existing opt-in choice when post-processing the same image again.
 if [ ! -e "$BOOT_MNT/pocketterm35-overclock.txt" ]; then
     sudo cp "$PROJECT_DIR/configs/pocketterm35-overclock.txt" "$BOOT_MNT/"

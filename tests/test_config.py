@@ -11,7 +11,7 @@ class ConfigurationTests(unittest.TestCase):
 
     def test_pi4_credentials(self):
         config = (ROOT / 'scripts/02-configure-pmbootstrap.sh').read_text()
-        for value in ('device = raspberry-pi4', 'user = flylopi', 'systemd = never'):
+        for value in ('device = raspberry-pi4', 'user = flylopi', 'service_manager = openrc'):
             self.assertIn(value, config)
         self.assertIn('--password 0807', (ROOT / 'scripts/04-build-image.sh').read_text())
 

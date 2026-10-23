@@ -35,6 +35,7 @@ echo "==> Writing pmbootstrap configuration..."
 mkdir -p "$HOME/.config"
 cat > "$HOME/.config/pmbootstrap_v3.cfg" << CFGEOF
 [pmbootstrap]
+aports = $PMAPORTS_DIR
 boot_size = 512
 build_pkgs_on_install = false
 ccache_size = 5G
@@ -43,13 +44,13 @@ extra_packages = bash, upower, i2c-tools, evtest, libinput-tools, python3, py3-g
 extra_space = 0
 hostname = pocketterm35
 jobs = 8
-kernel = rpi
+kernel = stable
 keymap = us
 locale = en_US.UTF-8
 ssh_key_glob = ~/.ssh/*.pub
 ssh_keys = false
 sudo_timer = false
-systemd = never
+service_manager = openrc
 timezone = GMT
 ui = sway
 ui_extras = false
@@ -66,6 +67,22 @@ pmaports_custom = none
 systemd = http://mirror.postmarketos.org/postmarketos/extra-repos/systemd/
 systemd_custom = none
 CFGEOF
+
+# Direct configuration must initialize the work version just as `init` does.
+# Read the installed pmbootstrap constant; never mark existing chroots migrated.
+python3 - "$(dirname "$(readlink -f "$PMBOOTSTRAP")")" "$HOME/.local/var/pmbootstrap-pocketterm35-desktop" <<'PYINIT'
+import pathlib
+import sys
+sys.path.insert(0, sys.argv[1])
+import pmb.config
+work = pathlib.Path(sys.argv[2])
+work.mkdir(parents=True, exist_ok=True, mode=0o700)
+version = work / 'version'
+if not version.exists():
+    if list(work.glob('chroot_*')) or (work / 'workdir.cfg').exists():
+        raise SystemExit('Refusing to assign a work version to existing unversioned chroots')
+    version.write_text(str(pmb.config.work_version) + '\n')
+PYINIT
 
 echo "==> Configuration written."
 "$PMBOOTSTRAP" config device
